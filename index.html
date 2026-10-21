@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl"><script src="chrome-extension://dmiapkdnpgdpikfgakidppbcociobfna/injected.js"></script><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>پلتفرم آموزشی</title>
+<meta name="theme-color" content="#3a8a5c" id="meta-theme">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="آموزشیار">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<script>window.__STUDENT__=true;</script><script src="data/catalog.js"></script>
+<style>
+@font-face { font-family:'Vazirmatn'; src: local('Vazirmatn'), url('fonts/Vazirmatn.woff2') format('woff2'); font-display: swap; }
+:root {
+  --bg:#f6f7f6; --surface:#ffffff; --soft:#f0f2f0; --text:#1f2a24; --muted:#6b7870; --line:#e3e8e4;
+  --accent:#3a8a5c; --accent-ink:#ffffff; --accent-soft:#e5f1ea; --danger:#c94c4c; --shadow:0 2px 12px rgba(20,40,30,.06);
+}
+[data-theme="dark"] {
+  --bg:#111614; --surface:#1a211d; --soft:#222a25; --text:#e8eeea; --muted:#8d9b92; --line:#2b352f;
+  --accent:#52b27d; --accent-ink:#0c1a12; --accent-soft:#1e3327; --danger:#e07070; --shadow:none;
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html { font-size:16px; }
+body { font-family:'Vazirmatn','Segoe UI',Tahoma,system-ui,sans-serif; background:var(--bg); color:var(--text); line-height:1.6; min-height:100vh; padding-bottom:calc(84px + env(safe-area-inset-bottom)); }
+button, input, textarea { font-family:inherit; font-size:inherit; color:inherit; }
+button { cursor:pointer; }
+.ico svg { width:22px; height:22px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; display:block; }
+
+.topbar { position:sticky; top:0; z-index:50; background:var(--bg); padding:calc(10px + env(safe-area-inset-top)) 16px 10px; border-bottom:1px solid var(--line); }
+.topbar-in { max-width:760px; margin:0 auto; display:flex; align-items:center; gap:10px; min-height:40px; }
+.topbar h1 { font-size:1.1rem; font-weight:700; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.icon-btn { width:40px; height:40px; border-radius:12px; border:1px solid var(--line); background:var(--surface); display:none; align-items:center; justify-content:center; }
+.icon-btn.show { display:flex; }
+.badge { font-size:.72rem; background:var(--accent-soft); color:var(--accent); padding:3px 10px; border-radius:20px; font-weight:700; display:none; }
+.badge.show { display:inline-block; }
+.banner { display:none; background:var(--accent); color:var(--accent-ink); padding:10px 16px; text-align:center; font-size:.9rem; }
+.banner button { margin-inline-start:10px; border:none; background:var(--accent-ink); color:var(--accent); border-radius:8px; padding:4px 12px; font-weight:700; }
+.offline { display:none; text-align:center; font-size:.8rem; padding:6px; background:var(--soft); color:var(--muted); }
+
+main { max-width:760px; margin:0 auto; padding:18px 16px; }
+h2.sec { font-size:1rem; margin:22px 0 12px; display:flex; justify-content:space-between; align-items:center; }
+.grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px; }
+.card { position:relative; background:var(--surface); border:1px solid var(--line); border-radius:18px; padding:18px 12px; text-align:center; cursor:pointer; box-shadow:var(--shadow); transition:transform .15s; }
+.card:active { transform:scale(.97); }
+.card .ci { width:52px; height:52px; margin:0 auto 10px; border-radius:16px; background:var(--accent-soft); display:flex; align-items:center; justify-content:center; font-size:1.6rem; }
+.card .ct { font-weight:600; font-size:.92rem; }
+.card .cs { font-size:.75rem; color:var(--muted); margin-top:2px; }
+.card.off { opacity:.4; }
+.card.add { border:2px dashed var(--accent); background:transparent; box-shadow:none; color:var(--accent); display:flex; flex-direction:column; justify-content:center; align-items:center; font-weight:600; }
+.ctrl { position:absolute; top:6px; left:6px; display:none; gap:4px; }
+body.admin-on .ctrl { display:flex; }
+.ctrl button { border:1px solid var(--line); background:var(--surface); border-radius:8px; padding:2px 7px; font-size:.8rem; }
+
+.hero { background:var(--accent); color:var(--accent-ink); border-radius:22px; padding:20px; }
+.hero small { opacity:.85; }
+.hero h3 { font-size:1.2rem; margin:4px 0 12px; }
+.hero .bar { background:rgba(255,255,255,.3); }
+.hero .bar i { background:var(--accent-ink); }
+.hero .btn { background:var(--accent-ink); color:var(--accent); margin-top:14px; }
+.searchbox { display:flex; align-items:center; gap:8px; background:var(--soft); border-radius:14px; padding:0 14px; color:var(--muted); margin-bottom:16px; }
+.searchbox input { flex:1; border:none; background:transparent; padding:13px 0; outline:none; }
+
+.row { display:flex; align-items:center; gap:12px; background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:14px; margin-bottom:10px; cursor:pointer; position:relative; }
+.row .rt { flex:1; font-weight:600; font-size:.93rem; }
+.row .rs { font-size:.76rem; color:var(--muted); font-weight:400; }
+.tick { width:26px; height:26px; border-radius:50%; border:2px solid var(--line); display:flex; align-items:center; justify-content:center; font-size:1rem; color:var(--muted); background:transparent; padding:0; flex-shrink:0; }
+.tick.on { background:var(--accent); border-color:var(--accent); color:var(--accent-ink); }
+.ci.has-img { width:100%; height:92px; padding:0; overflow:hidden; border-radius:14px; }
+.ci img { width:100%; height:100%; object-fit:cover; display:block; }
+.thumb { width:46px; height:46px; border-radius:12px; object-fit:cover; flex-shrink:0; }
+.lp { padding:14px; }
+.bdg { position:absolute; top:8px; left:8px; background:var(--accent-soft); color:var(--accent); font-size:.68rem; font-weight:700; padding:3px 8px; border-radius:12px; max-width:90%; }
+.bdg.up { background:var(--accent); color:var(--accent-ink); } .bdg.mine { left:auto; right:8px; }
+.bdg-in { display:inline-block; background:var(--accent); color:var(--accent-ink); font-size:.68rem; padding:1px 8px; border-radius:10px; margin-inline-start:6px; font-weight:700; }
+.stat-row { display:flex; gap:10px; margin-top:14px; } .stat-row .btn { flex:1; }
+.lrow { cursor:pointer; font-size:.85rem; border-top:1px solid var(--line); }
+.bar { height:7px; background:var(--soft); border-radius:8px; overflow:hidden; }
+.bar i { display:block; height:100%; background:var(--accent); border-radius:8px; }
+
+.btn { border:none; border-radius:12px; padding:11px 18px; font-weight:700; background:var(--accent); color:var(--accent-ink); }
+.btn.ghost { background:var(--soft); color:var(--text); }
+.btn.sm { padding:6px 12px; font-size:.82rem; }
+.btn.block { width:100%; }
+.seg { display:flex; background:var(--soft); border-radius:12px; padding:3px; }
+.seg button { flex:1; border:none; background:transparent; padding:8px; border-radius:10px; font-size:.88rem; }
+.seg button.on { background:var(--surface); box-shadow:var(--shadow); font-weight:700; }
+.panel { background:var(--surface); border:1px solid var(--line); border-radius:18px; padding:16px; margin-bottom:14px; }
+.panel h4 { font-size:.9rem; margin-bottom:12px; color:var(--muted); font-weight:600; }
+.prow { display:flex; justify-content:space-between; align-items:center; gap:10px; padding:8px 0; }
+.stack { display:grid; gap:8px; }
+.chips { display:flex; gap:6px; overflow-x:auto; padding-bottom:8px; margin-bottom:10px; }
+.chip { border:1px solid var(--line); background:var(--surface); border-radius:20px; padding:7px 15px; white-space:nowrap; font-size:.86rem; }
+.chip.on { background:var(--accent); border-color:var(--accent); color:var(--accent-ink); font-weight:700; }
+.empty { text-align:center; color:var(--muted); padding:40px 10px; }
+mark { background:var(--accent-soft); color:var(--accent); border-radius:4px; padding:0 2px; }
+
+.content { line-height:2; font-size:1rem; overflow-wrap:anywhere; }
+.content h2 { font-size:1.25rem; margin:.4rem 0 .7rem; }
+.content h3 { font-size:1.08rem; margin:.4rem 0 .5rem; color:var(--accent); }
+.content p { margin-bottom:.8rem; }
+.content ul, .content ol { padding-inline-start:1.5rem; margin-bottom:.8rem; }
+.content a { color:var(--accent); }
+.content img { max-width:100%; height:auto; border-radius:12px; margin:.4rem 0; }
+.content blockquote { border-inline-start:3px solid var(--accent); padding:.3rem 1rem; color:var(--muted); margin:.6rem 0; }
+.content table { border-collapse:collapse; width:100%; margin:.6rem 0; display:block; overflow-x:auto; }
+.content td, .content th { border:1px solid var(--line); padding:8px 10px; min-width:70px; }
+.content .note { background:var(--accent-soft); border-inline-start:4px solid var(--accent); border-radius:10px; padding:.7rem 1rem; margin:.7rem 0; }
+.lesson-box { background:var(--surface); border:1px solid var(--line); border-radius:18px; padding:20px; min-height:200px; }
+
+.tree-root { display:inline-block; background:var(--accent); color:var(--accent-ink); padding:9px 18px; border-radius:12px; font-weight:700; margin-bottom:10px; }
+.tree-branches { margin-inline-start:1.2rem; padding-inline-start:1.1rem; border-inline-start:2px solid var(--accent); display:grid; gap:10px; }
+.tree-node { position:relative; background:var(--soft); border-radius:12px; padding:9px 14px; line-height:1.7; }
+.tree-node::before { content:''; position:absolute; top:50%; inset-inline-start:-1.1rem; width:1.1rem; height:2px; background:var(--accent); }
+.tree-node strong { display:block; color:var(--accent); }
+.tree-node span { font-size:.9rem; color:var(--muted); }
+.xmind-container { display:grid; gap:8px; } .xmind-root { background:var(--accent); color:var(--accent-ink); padding:9px 18px; border-radius:12px; font-weight:700; display:inline-block; } .xmind-branches { display:grid; gap:8px; padding-inline-start:1rem; border-inline-start:2px solid var(--accent); } .xmind-node { background:var(--soft); border-radius:12px; padding:9px 14px; } .xmind-node strong { display:block; color:var(--accent); }
+
+.quiz { border:1px solid var(--line); border-radius:16px; padding:14px; background:var(--soft); margin:.8rem 0; line-height:1.8; }
+.qq { margin-bottom:16px; } .qt { font-weight:700; margin-bottom:6px; }
+.qopt { display:block; width:100%; text-align:start; padding:10px 14px; border-radius:12px; border:1px solid var(--line); background:var(--surface); margin:6px 0; }
+.qopt.ok { border-color:var(--accent); background:var(--accent-soft); }
+.qopt.bad { border-color:var(--danger); }
+.qopt:disabled { opacity:1; cursor:default; }
+.qexp { font-size:.88rem; color:var(--muted); padding:6px 4px; }
+.quiz-foot { display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; font-weight:700; }
+.file-card { display:flex; align-items:center; gap:10px; flex-wrap:wrap; border:1px solid var(--line); background:var(--soft); border-radius:14px; padding:12px; margin:.7rem 0; }
+.file-card .fn { flex:1; min-width:120px; word-break:break-all; }
+
+.bottom-nav { position:fixed; bottom:0; inset-inline:0; z-index:60; background:var(--surface); border-top:1px solid var(--line); padding:6px 8px calc(6px + env(safe-area-inset-bottom)); }
+.bottom-in { max-width:760px; margin:0 auto; display:grid; grid-template-columns:repeat(4,1fr); gap:4px; }
+.nav-btn { border:none; background:transparent; color:var(--muted); display:flex; flex-direction:column; align-items:center; gap:2px; padding:7px 4px; border-radius:16px; font-size:.72rem; }
+.nav-btn.on { color:var(--accent); background:var(--accent-soft); font-weight:700; }
+
+.modal { position:fixed; inset:0; background:rgba(0,0,0,.55); display:none; z-index:1000; align-items:flex-end; justify-content:center; }
+.modal.show { display:flex; }
+#dlg { z-index:1100; }
+.sheet { background:var(--bg); width:100%; max-width:820px; height:96vh; border-radius:22px 22px 0 0; display:flex; flex-direction:column; overflow:hidden; }
+.sheet.sm { height:auto; max-height:92vh; }
+.sheet-head, .sheet-foot { padding:12px 16px; display:flex; align-items:center; justify-content:space-between; gap:8px; background:var(--surface); }
+.sheet-head { border-bottom:1px solid var(--line); } .sheet-foot { border-top:1px solid var(--line); padding-bottom:calc(12px + env(safe-area-inset-bottom)); }
+.sheet-body { padding:12px 16px; overflow-y:auto; flex:1; }
+.toolbar { display:flex; gap:4px; overflow-x:auto; padding:6px 0 10px; }
+.toolbar button { border:1px solid var(--line); background:var(--surface); border-radius:9px; padding:6px 11px; white-space:nowrap; font-size:.85rem; }
+.ed-area { background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:14px; min-height:300px; outline:none; }
+.ed-area .block { border:2px dashed var(--accent); border-radius:12px; padding:12px; text-align:center; color:var(--accent); cursor:pointer; margin:.6rem 0; user-select:none; }
+#ed-src { width:100%; min-height:340px; direction:ltr; text-align:left; font-family:monospace; background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:12px; display:none; }
+.field { width:100%; background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:10px 12px; margin-bottom:8px; outline:none; }
+.qcard { background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:12px; margin-bottom:12px; }
+.optrow { display:flex; gap:8px; align-items:center; } .optrow input[type=radio] { accent-color:var(--accent); width:20px; height:20px; flex-shrink:0; }
+.toast { position:fixed; bottom:calc(96px + env(safe-area-inset-bottom)); left:50%; transform:translateX(-50%); background:var(--text); color:var(--bg); padding:9px 18px; border-radius:20px; font-size:.86rem; z-index:2000; display:none; }
+#error-box { display:none; background:#7f1d1d; color:#fff; padding:14px; margin:10px; border-radius:10px; direction:ltr; text-align:left; font-family:monospace; font-size:.8rem; }
+@media (min-width:700px) { .sheet { border-radius:22px; height:90vh; margin:auto; } .modal { align-items:center; } }
+</style>
+</head>
+<body>
+<div id="error-box"></div>
+<div class="banner" id="update-banner">🔄 نسخه جدید آماده است <button data-act="apply-update">به‌روزرسانی</button></div>
+<div class="offline" id="offline">📴 آفلاین هستید؛ محتوای ذخیره‌شده نمایش داده می‌شود</div>
+
+<header class="topbar"><div class="topbar-in">
+  <button class="icon-btn ico" id="btn-back" data-act="back" aria-label="بازگشت"></button>
+  <h1 id="title">پلتفرم آموزشی</h1>
+  <span class="badge" id="badge-admin">حالت ویرایش</span>
+</div></header>
+
+<main id="view"><div class="empty">در حال بارگذاری...</div></main>
+
+<nav class="bottom-nav"><div class="bottom-in" id="nav"></div></nav>
+<div class="toast" id="toast"></div>
+<input type="file" id="file-import" accept=".json" hidden="">
+<input type="file" id="file-img" accept="image/*" hidden="">
+<input type="file" id="file-pdf" accept="application/pdf" hidden="">
+
+<!-- ویرایشگر درس -->
+<div class="modal" id="editor"><div class="sheet">
+  <div class="sheet-head"><strong id="ed-title">ویرایش درس</strong><button class="btn ghost sm" data-act="ed-close">✕</button></div>
+  <div class="sheet-body">
+    <div class="chips" id="ed-tabs"></div>
+    <div class="toolbar" id="ed-toolbar">
+      <button data-act="cmd" data-id="bold"><b>B</b></button><button data-act="cmd" data-id="italic"><i>I</i></button><button data-act="cmd" data-id="underline"><u>U</u></button>
+      <button data-act="cmd" data-id="h2">تیتر</button><button data-act="cmd" data-id="h3">زیرتیتر</button>
+      <button data-act="cmd" data-id="ul">• لیست</button><button data-act="cmd" data-id="ol">۱. لیست</button>
+      <button data-act="cmd" data-id="quote">نقل‌قول</button><button data-act="cmd" data-id="note">💡 نکته</button>
+      <button data-act="cmd" data-id="link">🔗 لینک</button><button data-act="cmd" data-id="table">▦ جدول</button>
+      <button data-act="cmd" data-id="clear">پاک‌کردن قالب</button>
+      <button data-act="cmd" data-id="image">🖼 تصویر</button><button data-act="cmd" data-id="pdf">📄 PDF</button>
+      <button data-act="cmd" data-id="quiz">🧪 آزمون</button><button data-act="cmd" data-id="tree">🌳 نمودار درختی</button>
+    </div>
+    <div class="ed-area content" id="ed-area" contenteditable="true" dir="rtl"></div>
+    <textarea id="ed-src" spellcheck="false"></textarea>
+  </div>
+  <div class="sheet-foot">
+    <div style="display:flex;gap:6px"><button class="btn ghost sm" id="b-src" data-act="ed-source">‹/› کد HTML تب</button><button class="btn ghost sm" id="b-full" data-act="ed-full">{ } کد کامل درس</button></div>
+    <div style="display:flex;gap:8px"><button class="btn ghost" data-act="ed-close">انصراف</button><button class="btn" data-act="ed-save">💾 ذخیره</button></div>
+  </div>
+</div></div>
+
+<!-- دیالوگ عمومی -->
+<div class="modal" id="dlg"><div class="sheet sm">
+  <div class="sheet-head"><strong id="dlg-title"></strong><button class="btn ghost sm" data-act="dlg-close">✕</button></div>
+  <div class="sheet-body" id="dlg-body"></div>
+  <div class="sheet-foot"><span></span><div style="display:flex;gap:8px"><button class="btn ghost" data-act="dlg-close">انصراف</button><button class="btn" data-act="dlg-save">تایید</button></div></div>
+</div></div>
+
+<script>
+const PRISTINE = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+
+/* ================= تنظیمات ================= */
+const SETTINGS = {
+  APP_NAME: "پلتفرم آموزشی",
+  SHORT_NAME: "آموزشیار",
+  ADMIN_PIN: "",
+  SOCIAL: { "تلگرام": "", "اینستاگرام": "", "واتس‌اپ": "", "ایتا": "" }
+};
+const CURRENT_VERSION = "3.0.0";
+const IS_STUDENT = window.__STUDENT__ === true;
+const IS_HOSTED = /^https?:$/.test(location.protocol);
+const IS_LOCAL = ['localhost','127.0.0.1'].includes(location.hostname);
+const ADMIN_ALLOWED = !IS_STUDENT && (!IS_HOSTED || IS_LOCAL || location.search.includes('admin'));
+
+window.onerror = (m, u, l) => { const b = document.getElementById('error-box'); b.style.display = 'block'; b.textContent += 'Error: ' + m + ' (line ' + l + ')\n'; };
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fa = n => Number(n).toLocaleString('fa-IR');
+const enc = o => encodeURIComponent(JSON.stringify(o));
+const dec = s => { try { return JSON.parse(decodeURIComponent(s)); } catch (e) { return null; } };
+function toast(t) { const el = $('toast'); el.textContent = t; el.style.display = 'block'; clearTimeout(toast.t); toast.t = setTimeout(() => el.style.display = 'none', 2200); }
+
+const ICONS = {
+  home:'<svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>',
+  search:'<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>',
+  chart:'<svg viewBox="0 0 24 24"><path d="M5 20V11M12 20V4M19 20v-6"/></svg>',
+  set:'<svg viewBox="0 0 24 24"><path d="M4 6h8M18 6h2M4 12h2M10 12h10M4 18h10M18 18h2"/><circle cx="15" cy="6" r="2"/><circle cx="8" cy="12" r="2"/><circle cx="16" cy="18" r="2"/></svg>',
+  back:'<svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>'
+};
+$('btn-back').innerHTML = ICONS.back;
+const NAV = [['home','خانه'],['search','جستجو'],['progress','کتاب‌های من'],['settings','تنظیمات']];
+$('nav').innerHTML = NAV.map(n => `<button class="nav-btn" data-act="tab-nav" data-id="${n[0]}"><span class="ico">${ICONS[n[0]==='progress'?'chart':n[0]==='settings'?'set':n[0]]}</span>${n[1]}</button>`).join('');
+
+/* ================= ذخیره‌سازی ================= */
+const store = {
+  db: null,
+  async open() {
+    if (this.db || !window.indexedDB) return;
+    await new Promise(res => {
+      const r = indexedDB.open('edu_platform', 1);
+      r.onupgradeneeded = () => r.result.createObjectStore('kv');
+      r.onsuccess = () => { this.db = r.result; res(); };
+      r.onerror = () => res();
+    });
+  },
+  get(k) {
+    return new Promise(res => {
+      if (!this.db) { try { res(JSON.parse(localStorage.getItem('kv_' + k))); } catch (e) { res(null); } return; }
+      const q = this.db.transaction('kv').objectStore('kv').get(k);
+      q.onsuccess = () => res(q.result === undefined ? null : q.result); q.onerror = () => res(null);
+    });
+  },
+  set(k, v) {
+    return new Promise((res, rej) => {
+      if (!this.db) { try { localStorage.setItem('kv_' + k, JSON.stringify(v)); res(); } catch (e) { rej(e); } return; }
+      const tx = this.db.transaction('kv', 'readwrite'); tx.objectStore('kv').put(v, k);
+      tx.oncomplete = () => res(); tx.onerror = () => rej(tx.error);
+    });
+  },
+  del(k) { return new Promise(res => { if (!this.db) { localStorage.removeItem('kv_' + k); res(); return; } const tx = this.db.transaction('kv', 'readwrite'); tx.objectStore('kv').delete(k); tx.oncomplete = () => res(); }); }
+};
+const ls = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+};
+
+/* ================= داده نمونه ================= */
+const blk = (type, payload) => `<div class="block" data-${type}="${enc(payload)}"></div>`;
+const initialData = [{ id:'g7', title:'پایه هفتم', icon:'7️⃣', active:true, books:[{ id:'b7a', title:'عربی هفتم', icon:'📖', lessons:[{
+  id:'l1', title:'درس اول: الحروف العربیة',
+  fullHtml:
+`<!-- TAB: محتوا -->
+<h2>الدرس الأول: الحروف العربیة</h2>
+<p>در این درس با حروف الفبای عربی آشنا می‌شویم.</p>
+<div class="note">برای ویرایش این درس، حالت ویرایش را از «تنظیمات» روشن کنید.</div>
+<!-- TAB: نمودار درختی -->
+<h2>نمودار درختی</h2>
+${blk('tree', {r:'الحروف العربیة', b:[{t:'الفبا', d:'۲۸ حرف'},{t:'حروف شمسی', d:'۱۴ حرف'},{t:'حروف قمری', d:'۱۴ حرف'}]})}
+<!-- TAB: نکات -->
+<h2>نکات امتحانی</h2>
+<ul><li>نشانه مؤنث «ة» است.</li><li>الفبای عربی ۲۸ حرف دارد.</li></ul>
+<!-- TAB: آزمون -->
+<h2>آزمون</h2>
+${blk('quiz', {q:[{t:'کدام کلمه مؤنث است؟', o:['مدرسة','کتاب','قلم','باب'], a:0, e:'نشانه مؤنث «ة» است.'},{t:'الفبای عربی چند حرف دارد؟', o:['۲۶','۲۸','۳۲'], a:1, e:''}]})}
+<!-- TAB: گام به گام -->
+<h2>گام به گام</h2>
+<p>پاسخ تمرین‌های صفحه ۱۴...</p>`
+}]}]}];
+
+/* ================= وضعیت ================= */
+let appData = [];
+const S = { tab:'home', g:null, b:null, l:null, t:0, q:'' };
+let isAdmin = false;
+let prefs = ls.get('edu_prefs_v1', { theme:'auto', fs:16 });
+let prog = ls.get('edu_progress_v1', { tabs:{}, quiz:{}, last:null, mine:[] });
+prog.tabs = prog.tabs || {}; prog.quiz = prog.quiz || {}; prog.books = prog.books || []; prog.status = prog.status || {};
+const saveProg = () => ls.set('edu_progress_v1', prog);
+const G = () => appData.find(x => x.id === S.g);
+const B = () => (G() || { books:[] }).books.find(x => x.id === S.b);
+const L = () => (B() || { lessons:[] }).lessons.find(x => x.id === S.l);
+const lk = (b, l) => b.id + ':' + l.id;
+let searchIndex = null;
+
+function validData(d) { return Array.isArray(d) && d.every(g => g && typeof g.title === 'string' && Array.isArray(g.books) && g.books.every(b => b && typeof b.title === 'string' && Array.isArray(b.lessons))); }
+async function saveData() { searchIndex = null; try { await store.set('appData', appData); } catch (e) { alert('ذخیره‌سازی ناموفق بود (حافظه دستگاه پر است؟): ' + e.message); } }
+
+/* ---- نسخه دانش‌آموز: فهرست سبک + دریافت هر کتاب هنگام نیاز ---- */
+function applyCatalog(cat) {
+  const old = {}; appData.forEach(g => g.books.forEach(b => old[b.id] = b));
+  appData = cat.grades.map(g => ({ ...g, books:g.books.map(b => { const o = old[b.id];
+    return { id:b.id, title:b.title, icon:b.icon, img:b.img, meta:{ rev:b.rev, size:b.size, file:b.file, lessons:b.lessons }, lessons:o ? o.lessons : [], dl:o ? o.dl : null }; }) }));
+  searchIndex = null;
+}
+async function loadStudent() {
+  let cat = window.__CATALOG__;
+  if (cat) store.set('catalog', cat).catch(() => {}); else cat = await store.get('catalog');
+  appData = []; if (!cat) return;
+  applyCatalog(cat);
+  for (const g of appData) for (const b of g.books) { const pk = await store.get('pack:' + b.id); if (pk && pk.lessons) { b.lessons = pk.lessons; b.dl = { rev:pk.rev }; } }
+  try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch (e) {}
+}
+function refreshCatalog() {
+  return new Promise(res => {
+    const sc = document.createElement('script'); sc.src = 'data/catalog.js?t=' + Date.now();
+    sc.onload = () => { sc.remove(); if (window.__CATALOG__) { store.set('catalog', window.__CATALOG__).catch(() => {}); applyCatalog(window.__CATALOG__); } res(true); };
+    sc.onerror = () => { sc.remove(); res(false); };
+    document.head.appendChild(sc);
+  });
+}
+function loadPackScript(b) {
+  return new Promise((res, rej) => {
+    const sc = document.createElement('script'); sc.src = 'data/' + b.meta.file;
+    sc.onload = () => { sc.remove(); const pk = window.__PACK__ && window.__PACK__[b.id]; if (pk) { delete window.__PACK__[b.id]; res(pk); } else rej(new Error('bad pack')); };
+    sc.onerror = () => { sc.remove(); rej(new Error('network')); };
+    document.head.appendChild(sc);
+  });
+}
+async function downloadBook(b) {
+  if (dlBusy[b.id]) return false; dlBusy[b.id] = 1; render();
+  try {
+    const pk = await loadPackScript(b); await store.set('pack:' + b.id, pk);
+    b.lessons = pk.lessons; b.dl = { rev:pk.rev }; searchIndex = null; toast('کتاب دریافت شد'); return true;
+  } catch (e) { alert('دریافت کتاب ناموفق بود. اتصال اینترنت را بررسی کنید.'); return false; }
+  finally { delete dlBusy[b.id]; render(); }
+}
+async function openBook(gid, bid) {
+  const g = appData.find(x => x.id === gid), b = g && g.books.find(x => x.id === bid); if (!b) return;
+  if (IS_STUDENT && !b.dl && !(await downloadBook(b))) return;
+  nav({ tab:'home', g:gid, b:bid, l:null, t:0 });
+}
+
+async function loadData() {
+  await store.open();
+  if (IS_STUDENT) { await loadStudent(); return; }
+  if (!IS_STUDENT) {
+    let d = await store.get('appData');
+    if (validData(d) && d.length) { appData = d; return; }
+    const old = ls.get('my_platform_data_v10', null);
+    if (validData(old) && old.length) { appData = old; await saveData(); return; }
+  }
+  if (IS_HOSTED) {
+    try {
+      const r = await fetch('data.json', { cache:'no-cache' });
+      if (r.ok) { const d = await r.json(); if (validData(d)) { appData = d; return; } }
+    } catch (e) {}
+  }
+  appData = IS_STUDENT ? [] : JSON.parse(JSON.stringify(initialData));
+}
+
+/* ================= پوسته ================= */
+function applyPrefs() {
+  const dark = prefs.theme === 'dark' || (prefs.theme === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches);
+  document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+  document.documentElement.style.fontSize = prefs.fs + 'px';
+  $('meta-theme').content = dark ? '#111614' : '#3a8a5c';
+}
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyPrefs);
+
+/* ================= مسیریابی ================= */
+function nav(patch, push = true) {
+  Object.assign(S, patch);
+  if (push) history.pushState(JSON.parse(JSON.stringify(S)), '');
+  render(); window.scrollTo(0, 0);
+}
+window.addEventListener('popstate', e => { if (e.state) { Object.assign(S, e.state); render(); } });
+
+function render() {
+  const v = $('view');
+  let title = SETTINGS.APP_NAME, back = false;
+  if (S.tab === 'home') {
+    if (S.l && L()) { title = L().title; back = true; }
+    else if (S.b && B()) { title = B().title; back = true; }
+    else if (S.g && G()) { title = G().title; back = true; }
+  } else { title = { search:'جستجو', progress:'کتاب‌های من', settings:'تنظیمات' }[S.tab]; }
+  $('title').textContent = title;
+  $('btn-back').classList.toggle('show', back);
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.toggle('on', b.dataset.id === S.tab));
+  document.body.classList.toggle('admin-on', isAdmin);
+  $('badge-admin').classList.toggle('show', isAdmin);
+  ({ home:renderHome, search:renderSearch, progress:renderProgress, settings:renderSettings })[S.tab](v);
+}
+
+/* ================= پیشرفت ================= */
+function lessonProg(b, l) {
+  const tabs = parseTabs(l.fullHtml), k = lk(b, l); let done = 0;
+  tabs.forEach((t, i) => {
+    let ok = !!(prog.tabs[k] && prog.tabs[k][i]);
+    const m = (t.content.match(/data-quiz=/g) || []).length;
+    for (let q = 0; ok && q < m; q++) if (!(prog.quiz[k] && prog.quiz[k][i + ':' + q])) ok = false;
+    if (ok) done++;
+  });
+  return { done, total:tabs.length, p:Math.round(done * 100 / tabs.length) };
+}
+const statusOf = (b, l) => prog.status[lk(b, l)] || '';
+function setStatus(b, l, st) { const k = lk(b, l); if (prog.status[k] === st) delete prog.status[k]; else prog.status[k] = st; saveProg(); }
+const bookTotal = b => b.meta ? b.meta.lessons.length : b.lessons.length;
+function bookStats(b) {
+  let read = 0, rev = 0;
+  b.lessons.forEach(l => { const s = statusOf(b, l); if (s === 'read') read++; else if (s === 'review') rev++; });
+  const total = bookTotal(b); return { read, rev, total, p:total ? Math.round(read * 100 / total) : 0 };
+}
+const isMineBook = b => prog.books.some(m => m.b === b.id);
+function toggleMineBook(g, b) {
+  const i = prog.books.findIndex(m => m.b === b.id);
+  if (i >= 0) prog.books.splice(i, 1); else prog.books.push({ g:g.id, b:b.id });
+  saveProg(); toast(i >= 0 ? 'از کتاب‌های من حذف شد' : 'به کتاب‌های من اضافه شد');
+}
+function refreshLessonProg() {
+  const b = B(), l = L(); if (!b || !l || !$('lp-bar')) return;
+  const p = lessonProg(b, l); $('lp-bar').style.width = p.p + '%';
+  $('lp-txt').textContent = fa(p.done) + ' از ' + fa(p.total) + ' بخش · ' + fa(p.p) + '٪';
+}
+const lessonsIn = (list) => list.flatMap(g => g.books.flatMap(b => b.lessons.map(l => ({ b, l, g }))));
+const ciHtml = x => x.img ? `<div class="ci has-img"><img src="${esc(x.img)}" alt=""></div>` : `<div class="ci">${esc(x.icon || '📄')}</div>`;
+const fmtSize = n => n > 1048576 ? fa((n / 1048576).toFixed(1)) + ' مگابایت' : fa(Math.max(1, Math.round(n / 1024))) + ' کیلوبایت';
+const dlBusy = {};
+function bookState(b) { if (!IS_STUDENT) return 'ok'; if (!b.dl) return 'none'; return b.dl.rev !== b.meta.rev ? 'update' : 'ok'; }
+function lessonUpdated(b, l) { if (!IS_STUDENT || !b.meta) return false; const m = b.meta.lessons.find(x => x.id === l.id); return !!m && m.r !== l.r; }
+
+/* ================= صفحه‌ها ================= */
+function renderHome(v) {
+  if (S.l && L()) return renderLesson(v);
+  if (S.b && B()) return renderLessons(v);
+  if (S.g && G()) return renderBooks(v);
+  let last = null;
+  if (prog.last) { const g = appData.find(x => x.id === prog.last.g), b = g && g.books.find(x => x.id === prog.last.b), l = b && b.lessons.find(x => x.id === prog.last.l); if (l) last = { g, b, l }; }
+  let h = `<div class="searchbox" data-act="tab-nav" data-id="search"><span class="ico">${ICONS.search}</span><input placeholder="جستجو در درس‌های دریافت‌شده" readonly></div>`;
+  if (last) { const p = lessonProg(last.b, last.l);
+    h += `<div class="hero"><small>ادامه یادگیری</small><h3>${esc(last.l.title)}</h3><div class="bar"><i style="width:${p.p}%"></i></div><small>${fa(p.p)}٪ · ${esc(last.b.title)}</small><br><button class="btn" data-act="continue">ادامه</button></div>`;
+  } else h += `<div class="hero"><small>خوش آمدید</small><h3>یک پایه را انتخاب کنید</h3><small>کتاب‌های دلخواه را به «کتاب‌های من» اضافه کنید تا پیشرفتشان را ببینید.</small></div>`;
+  h += `<h2 class="sec">پایه‌های تحصیلی</h2>`;
+  if (!appData.length) h += `<div class="empty">هنوز محتوایی منتشر نشده است.</div>`;
+  h += `<div class="grid">`;
+  if (isAdmin) h += `<div class="card add" data-act="add-grade"><div style="font-size:1.6rem">＋</div>افزودن پایه</div>`;
+  appData.forEach(g => {
+    if (g.active === false && !isAdmin) return;
+    const c = isAdmin ? `<div class="ctrl"><button data-act="edit-grade" data-id="${esc(g.id)}">✏️</button><button data-act="toggle-grade" data-id="${esc(g.id)}">${g.active === false ? '🔓' : '🔒'}</button><button data-act="del-grade" data-id="${esc(g.id)}">🗑</button></div>` : '';
+    h += `<div class="card ${g.active === false ? 'off' : ''}" data-act="open-grade" data-id="${esc(g.id)}">${c}${ciHtml(g)}<div class="ct">${esc(g.title)}</div><div class="cs">${fa(g.books.length)} کتاب</div></div>`;
+  });
+  v.innerHTML = h + '</div>';
+}
+
+function renderBooks(v) {
+  const g = G(); let h = `<div class="grid">`;
+  if (isAdmin) h += `<div class="card add" data-act="add-book"><div style="font-size:1.6rem">＋</div>افزودن کتاب</div>`;
+  g.books.forEach(b => {
+    const st = bookState(b);
+    const badge = dlBusy[b.id] ? '<div class="bdg">⏳ در حال دریافت</div>' : st === 'none' ? `<div class="bdg">⬇ ${fmtSize(b.meta.size)}</div>` : st === 'update' ? '<div class="bdg up">🔄 بروزرسانی</div>' : '';
+    const star = isMineBook(b) ? '<div class="bdg mine">★</div>' : '';
+    const c = isAdmin ? `<div class="ctrl"><button data-act="edit-book" data-id="${esc(b.id)}">✏️</button><button data-act="del-book" data-id="${esc(b.id)}">🗑</button></div>` : '';
+    h += `<div class="card" data-act="open-book" data-id="${esc(b.id)}">${c}${badge}${star}${ciHtml(b)}<div class="ct">${esc(b.title)}</div><div class="cs">${fa(bookTotal(b))} درس</div></div>`;
+  });
+  v.innerHTML = h + '</div>' + (g.books.length || isAdmin ? '' : '<div class="empty">کتابی ثبت نشده است.</div>');
+}
+
+function renderLessons(v) {
+  const b = B(), st = bookState(b), s = bookStats(b), mine = isMineBook(b);
+  let h = `<div class="panel lp"><div class="prow" style="padding-top:0"><strong>پیشرفت کتاب</strong><span style="color:var(--muted);font-size:.85rem">${fa(s.read)} از ${fa(s.total)} خوانده · ${fa(s.p)}٪</span></div>
+    <div class="bar" style="margin-bottom:12px"><i style="width:${s.p}%"></i></div>
+    <button class="btn block ${mine ? 'ghost' : ''}" data-act="toggle-book">${mine ? '★ در کتاب‌های من (برای حذف لمس کنید)' : '＋ افزودن به کتاب‌های من'}</button></div>`;
+  if (st === 'update') h += `<div class="panel lp" style="border-color:var(--accent)"><div class="prow" style="padding:0"><span>🔄 نسخه جدیدی از این کتاب موجود است</span><button class="btn sm" data-act="update-book" data-id="${esc(b.id)}">${dlBusy[b.id] ? '⏳' : 'دریافت'}</button></div></div>`;
+  if (isAdmin) h += `<button class="btn block ghost" style="margin-bottom:12px" data-act="add-lesson">＋ افزودن درس</button>`;
+  b.lessons.forEach(l => {
+    const t = statusOf(b, l), up = lessonUpdated(b, l);
+    const c = isAdmin ? `<div class="ctrl" style="position:static;display:flex"><button data-act="edit-lesson" data-id="${esc(l.id)}">✏️</button><button data-act="del-lesson" data-id="${esc(l.id)}">🗑</button></div>` : '';
+    h += `<div class="row" data-act="open-lesson" data-id="${esc(l.id)}">${l.img ? `<img class="thumb" src="${esc(l.img)}" alt="">` : ''}
+      <div class="rt">${esc(l.title)}${up ? '<span class="bdg-in">🔄 بروز شده</span>' : ''}</div>${c}
+      <span class="tick ${t === 'read' ? 'on' : ''}">${t === 'read' ? '✓' : t === 'review' ? '🔁' : '○'}</span></div>`;
+  });
+  v.innerHTML = h + (b.lessons.length ? '' : '<div class="empty">درسی ثبت نشده است.</div>');
+}
+
+let parsedTabs = [];
+function parseTabs(html) {
+  if (!html || !html.trim()) return [{ name:'محتوا', content:'<div class="empty">محتوایی ثبت نشده است.</div>' }];
+  const re = /<!--\s*TAB:\s*(.*?)\s*-->([\s\S]*?)(?=<!--\s*TAB:|$)/g; let m, t = [];
+  while ((m = re.exec(html)) !== null) t.push({ name:m[1].trim(), content:m[2].trim() });
+  return t.length ? t : [{ name:'محتوا', content:html }];
+}
+const legacyClean = h => String(h).replace(/color:\s*#(?:34d399|cbd5e1|e2e8f0|e0e0e0|94a3b8|10b981)\s*;?/gi, '');
+
+function renderLesson(v) {
+  const g = G(), b = B(), l = L();
+  parsedTabs = parseTabs(l.fullHtml);
+  if (S.t >= parsedTabs.length) S.t = 0;
+  const k = lk(b, l);
+  prog.tabs[k] = prog.tabs[k] || {}; prog.tabs[k][S.t] = 1;
+  prog.last = { g:g.id, b:b.id, l:l.id }; saveProg();
+  const idx = b.lessons.indexOf(l), next = b.lessons[idx + 1], p = lessonProg(b, l), stt = statusOf(b, l);
+  v.innerHTML = `
+    ${isAdmin ? `<button class="btn block ghost" style="margin-bottom:12px" data-act="edit-content">✏️ ویرایش محتوای درس</button>` : ''}
+    ${lessonUpdated(b, l) ? `<div class="panel lp" style="border-color:var(--accent)"><div class="prow" style="padding:0"><span>🔄 این درس بروزرسانی شده است</span><button class="btn sm" data-act="update-book" data-id="${esc(b.id)}">${dlBusy[b.id] ? '⏳' : 'دریافت'}</button></div></div>` : ''}
+    <div class="panel lp" style="padding:12px 14px"><div class="prow" style="padding:0 0 8px"><strong style="font-size:.88rem">پیشرفت این درس</strong><span id="lp-txt" style="color:var(--muted);font-size:.82rem">${fa(p.done)} از ${fa(p.total)} بخش · ${fa(p.p)}٪</span></div><div class="bar"><i id="lp-bar" style="width:${p.p}%"></i></div></div>
+    <div class="chips">${parsedTabs.map((t, i) => `<button class="chip ${i === S.t ? 'on' : ''}" data-act="tab" data-id="${i}">${esc(t.name)}</button>`).join('')}</div>
+    <div class="lesson-box content" id="lesson-content">${legacyClean(parsedTabs[S.t].content)}</div>
+    <div class="stat-row"><button class="btn ${stt === 'read' ? '' : 'ghost'}" data-act="status" data-id="read">✅ خواندم</button><button class="btn ${stt === 'review' ? '' : 'ghost'}" data-act="status" data-id="review">🔁 نیاز به مرور</button></div>
+    ${next ? `<div style="margin-top:10px"><button class="btn ghost block" data-act="next-lesson" data-id="${esc(next.id)}">درس بعد: ${esc(next.title)}</button></div>` : ''}`;
+  hydrate($('lesson-content'), true);
+}
+
+/* ================= بلوک‌های تعاملی ================= */
+function hydrate(root, live) {
+  root.querySelectorAll('[data-tree]').forEach(el => {
+    const d = dec(el.dataset.tree); if (!d) return;
+    el.className = ''; el.removeAttribute('contenteditable');
+    el.innerHTML = `<div class="tree-root">${esc(d.r)}</div><div class="tree-branches">${(d.b || []).map(x => `<div class="tree-node"><strong>${esc(x.t)}</strong>${x.d ? `<span>${esc(x.d)}</span>` : ''}</div>`).join('')}</div>`;
+  });
+  root.querySelectorAll('[data-pdf]').forEach(el => {
+    el.className = 'file-card'; el.removeAttribute('contenteditable');
+    el.innerHTML = `<span style="font-size:1.5rem">📄</span><div class="fn">${esc(el.dataset.name || 'فایل PDF')}</div><button class="btn sm" data-act="pdf-open">باز کردن</button><button class="btn sm ghost" data-act="pdf-dl">دانلود</button>`;
+  });
+  root.querySelectorAll('[data-quiz]').forEach((el, qi) => {
+    const d = dec(el.dataset.quiz); if (!d || !d.q) return;
+    el.className = 'quiz'; el.removeAttribute('contenteditable');
+    const key = S.t + ':' + qi, lesson = L(), book = B();
+    const best = lesson && prog.quiz[lk(book, lesson)] && prog.quiz[lk(book, lesson)][key];
+    let answered = 0, correct = 0;
+    el.innerHTML = d.q.map((q, i) => `<div class="qq" data-i="${i}"><div class="qt">${fa(i + 1)}. ${esc(q.t)}</div>${q.o.map((o, j) => `<button class="qopt" data-j="${j}">${esc(o)}</button>`).join('')}<div class="qexp" hidden></div></div>`).join('') +
+      `<div class="quiz-foot"><span class="qscore">${best ? 'بهترین نتیجه: ' + fa(best.s) + ' از ' + fa(best.t) : ''}</span><button class="btn sm ghost" data-reset hidden>شروع دوباره</button></div>`;
+    el.querySelectorAll('.qopt').forEach(btn => btn.addEventListener('click', () => {
+      const qq = btn.closest('.qq'), q = d.q[+qq.dataset.i], j = +btn.dataset.j;
+      qq.querySelectorAll('.qopt').forEach((o, k) => { o.disabled = true; if (k === q.a) o.classList.add('ok'); });
+      if (j !== q.a) btn.classList.add('bad'); else correct++;
+      if (q.e) { const ex = qq.querySelector('.qexp'); ex.textContent = q.e; ex.hidden = false; }
+      if (++answered === d.q.length) {
+        el.querySelector('.qscore').textContent = 'نتیجه: ' + fa(correct) + ' از ' + fa(d.q.length);
+        el.querySelector('[data-reset]').hidden = false;
+        if (lesson && live) { const k = lk(book, lesson); prog.quiz[k] = prog.quiz[k] || {}; if (!prog.quiz[k][key] || prog.quiz[k][key].s < correct) prog.quiz[k][key] = { s:correct, t:d.q.length }; saveProg(); refreshLessonProg(); }
+      }
+    }));
+    el.querySelector('[data-reset]').addEventListener('click', () => { hydrateReset(el, d); });
+  });
+  root.querySelectorAll('script').forEach(old => { const s = document.createElement('script'); for (const a of old.attributes) s.setAttribute(a.name, a.value); s.textContent = old.textContent; old.replaceWith(s); });
+}
+function hydrateReset() { renderLesson($('view')); }
+
+function pdfBlob(dataUrl) { const [h, b64] = dataUrl.split(','); const bin = atob(b64), u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return new Blob([u], { type:'application/pdf' }); }
+
+/* ================= جستجو ================= */
+function norm(s) { return String(s).replace(/[يى]/g, 'ی').replace(/ك/g, 'ک').replace(/[\u064B-\u065F\u0670\u0640]/g, '').replace(/[۰-۹]/g, d => d.charCodeAt(0) - 1776).replace(/[٠-٩]/g, d => d.charCodeAt(0) - 1632).toLowerCase(); }
+function htmlText(h) {
+  let extra = '';
+  (h.match(/data-quiz="([^"]*)"/g) || []).forEach(m => { const d = dec(m.slice(11, -1)); if (d && d.q) d.q.forEach(q => extra += ' ' + q.t + ' ' + q.o.join(' ')); });
+  (h.match(/data-tree="([^"]*)"/g) || []).forEach(m => { const d = dec(m.slice(11, -1)); if (d) extra += ' ' + d.r + ' ' + (d.b || []).map(x => x.t + ' ' + (x.d || '')).join(' '); });
+  return h.replace(/<(script|style)[\s\S]*?<\/\1>/gi, ' ').replace(/data-[a-z]+="[^"]*"/gi, '').replace(/src="data:[^"]*"/gi, '').replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ') + extra;
+}
+function buildIndex() { searchIndex = lessonsIn(appData).filter(x => x.g.active !== false || isAdmin).map(x => ({ ...x, title:norm(x.l.title), text:norm(htmlText(x.l.fullHtml || '')).replace(/\s+/g, ' ') })); }
+function doSearch(q) {
+  const box = $('results'); const nq = norm(q.trim());
+  if (nq.length < 2) { box.innerHTML = '<div class="empty">حداقل ۲ حرف بنویسید.</div>'; return; }
+  if (!searchIndex) buildIndex();
+  const res = [];
+  searchIndex.forEach(x => {
+    const ti = x.title.indexOf(nq), ci = x.text.indexOf(nq);
+    if (ti < 0 && ci < 0) return;
+    res.push({ x, score:(ti >= 0 ? 100 : 0) + (ci >= 0 ? 1 : 0), ci });
+  });
+  res.sort((a, b) => b.score - a.score);
+  if (!res.length) { box.innerHTML = '<div class="empty">نتیجه‌ای پیدا نشد.</div>'; return; }
+  const hl = s => esc(s).split(esc(nq)).join('<mark>' + esc(nq) + '</mark>');
+  box.innerHTML = res.slice(0, 40).map(r => {
+    let sn = ''; if (r.ci >= 0) { const s = Math.max(0, r.ci - 40); sn = (s ? '…' : '') + r.x.text.slice(s, r.ci + nq.length + 70) + '…'; }
+    return `<div class="row" data-act="open-result" data-g="${esc(r.x.g.id)}" data-b="${esc(r.x.b.id)}" data-l="${esc(r.x.l.id)}"><div class="rt">${hl(r.x.l.title)}<div class="rs">${esc(r.x.g.title)} › ${esc(r.x.b.title)}</div>${sn ? `<div class="rs" style="margin-top:4px">${hl(sn)}</div>` : ''}</div></div>`;
+  }).join('');
+}
+function renderSearch(v) {
+  v.innerHTML = `<div class="searchbox"><span class="ico">${ICONS.search}</span><input id="q" placeholder="کلمه یا عبارت را بنویسید" value="${esc(S.q)}" autocomplete="off"></div><div id="results"></div>`;
+  const inp = $('q'); let t; inp.addEventListener('input', () => { S.q = inp.value; clearTimeout(t); t = setTimeout(() => doSearch(S.q), 180); });
+  doSearch(S.q); if (!S.q) inp.focus();
+}
+
+/* ================= کتاب‌های من ================= */
+function renderProgress(v) {
+  const items = [];
+  prog.books = prog.books.filter(m => { const g = appData.find(x => x.id === m.g), b = g && g.books.find(x => x.id === m.b); if (b) { items.push({ g, b }); return true; } return false; });
+  if (!items.length) { v.innerHTML = `<div class="empty">هنوز کتابی اضافه نکرده‌اید.<br>یک کتاب را باز کنید و «افزودن به کتاب‌های من» را بزنید.</div>`; return; }
+  v.innerHTML = items.map(({ g, b }) => {
+    const s = bookStats(b);
+    const rows = b.lessons.map(l => { const t = statusOf(b, l); return `<div class="prow lrow" data-act="open-result" data-g="${esc(g.id)}" data-b="${esc(b.id)}" data-l="${esc(l.id)}"><span>${esc(l.title)}</span><span>${t === 'read' ? '✅' : t === 'review' ? '🔁' : '○'}</span></div>`; }).join('');
+    const note = !b.lessons.length && IS_STUDENT ? '<div class="prow" style="font-size:.8rem;color:var(--muted)">برای دیدن درس‌ها، کتاب را باز و دریافت کنید.</div>' : '';
+    return `<div class="panel"><div class="prow" style="padding-top:0;cursor:pointer" data-act="open-result" data-g="${esc(g.id)}" data-b="${esc(b.id)}">
+        ${b.img ? `<img class="thumb" src="${esc(b.img)}" alt="">` : `<span style="font-size:1.6rem">${esc(b.icon)}</span>`}
+        <div style="flex:1"><strong>${esc(b.title)}</strong><div style="font-size:.76rem;color:var(--muted)">${esc(g.title)}</div></div>
+        <button class="btn ghost sm" data-act="mine-remove" data-b="${esc(b.id)}">حذف</button></div>
+      <div class="bar"><i style="width:${s.p}%"></i></div>
+      <div class="prow" style="padding:6px 0;font-size:.82rem;color:var(--muted)"><span>${fa(s.read)} خوانده · ${fa(s.rev)} نیاز به مرور · از ${fa(s.total)} درس</span><strong style="color:var(--text)">${fa(s.p)}٪</strong></div>${rows}${note}</div>`;
+  }).join('') + `<button class="btn ghost block" style="margin-top:8px" data-act="reset-progress">پاک‌کردن پیشرفت این دستگاه</button>`;
+}
+
+/* ================= تنظیمات ================= */
+let deferredPrompt = null, swReg = null;
+function renderSettings(v) {
+  const social = Object.entries(SETTINGS.SOCIAL).filter(([, u]) => /^https?:\/\//.test(u));
+  let h = `
+  <div class="panel"><h4>ظاهر</h4>
+    <div class="seg" style="margin-bottom:12px">${[['auto','خودکار'],['light','روشن'],['dark','تیره']].map(t => `<button class="${prefs.theme === t[0] ? 'on' : ''}" data-act="theme" data-id="${t[0]}">${t[1]}</button>`).join('')}</div>
+    <div class="prow"><span>اندازه متن</span><div style="display:flex;gap:8px;align-items:center"><button class="btn ghost sm" data-act="fs" data-id="-1">A−</button><span>${fa(prefs.fs)}</span><button class="btn ghost sm" data-act="fs" data-id="1">A+</button></div></div>
+  </div>
+  <div class="panel"><h4>برنامه</h4><div class="stack">
+    <button class="btn block" id="btn-install" data-act="install" style="display:${deferredPrompt || (IS_HOSTED && /iphone|ipad|ipod/i.test(navigator.userAgent) && !navigator.standalone) ? 'block' : 'none'}">📲 نصب برنامه روی گوشی / رایانه</button>
+    <button class="btn ghost block" data-act="check-update">🔄 بررسی به‌روزرسانی</button>
+    <div class="prow"><span style="color:var(--muted)">نسخه</span><span>${CURRENT_VERSION}${IS_STUDENT ? ' · دانش‌آموز' : ''}</span></div>
+  </div></div>`;
+  if (social.length) h += `<div class="panel"><h4>ارتباط با ما</h4><div class="chips">${social.map(([n, u]) => `<a class="chip" href="${esc(u)}" target="_blank" rel="noopener" style="text-decoration:none;color:inherit">${esc(n)}</a>`).join('')}</div></div>`;
+  if (ADMIN_ALLOWED) h += `<div class="panel"><h4>مدیریت محتوا</h4><div class="stack">
+    <button class="btn block ${isAdmin ? '' : 'ghost'}" data-act="admin-toggle">🔧 حالت ویرایش: ${isAdmin ? 'روشن' : 'خاموش'}</button>
+    <button class="btn ghost block" data-act="export-student">📦 ساخت بسته نسخه دانش‌آموز (ZIP، قابل نصب)</button>
+    <button class="btn ghost block" data-act="export-json">📥 دریافت data.json</button>
+    <button class="btn ghost block" data-act="import-json">📤 وارد کردن JSON</button>
+    <button class="btn ghost block" data-act="export-csv">📊 خروجی Excel (CSV)</button>
+    <button class="btn ghost block" style="color:var(--danger)" data-act="reset">بازنشانی داده‌های این دستگاه</button>
+  </div></div>`;
+  v.innerHTML = h;
+}
+
+/* ================= PWA ================= */
+function setupPWA() {
+  window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferredPrompt = e; if (S.tab === 'settings') render(); });
+  window.addEventListener('appinstalled', () => { deferredPrompt = null; if (S.tab === 'settings') render(); });
+  if (IS_HOSTED && 'serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').then(reg => {
+      swReg = reg;
+      if (reg.waiting && navigator.serviceWorker.controller) $('update-banner').style.display = 'block';
+      reg.addEventListener('updatefound', () => { const nw = reg.installing; nw && nw.addEventListener('statechange', () => { if (nw.state === 'installed' && navigator.serviceWorker.controller) $('update-banner').style.display = 'block'; }); });
+    }).catch(() => {});
+    let rl = false; navigator.serviceWorker.addEventListener('controllerchange', () => { if (!rl) { rl = true; location.reload(); } });
+  }
+  const on = () => $('offline').style.display = navigator.onLine ? 'none' : 'block';
+  addEventListener('online', on); addEventListener('offline', on); on();
+  addEventListener('online', () => { if (IS_STUDENT) refreshCatalog().then(() => render()); });
+}
+
+/* ================= ویرایشگر ================= */
+let edTabs = [], edIdx = 0, edSrc = false, edFull = false, edRange = null, edBlock = null;
+const ed = () => $('ed-area');
+document.addEventListener('selectionchange', () => { const s = getSelection(); if (s.rangeCount && ed().contains(s.anchorNode)) edRange = s.getRangeAt(0).cloneRange(); });
+$('ed-toolbar').addEventListener('mousedown', e => e.preventDefault());
+
+function blockLabel(el) {
+  if (el.dataset.quiz) { const d = dec(el.dataset.quiz); return '🧪 آزمون · ' + fa(d && d.q ? d.q.length : 0) + ' سؤال — برای ویرایش لمس کنید'; }
+  if (el.dataset.tree) { const d = dec(el.dataset.tree); return '🌳 نمودار درختی: ' + (d ? d.r : '') + ' — برای ویرایش لمس کنید'; }
+  if (el.dataset.pdf) return '📄 ' + (el.dataset.name || 'PDF');
+  return '';
+}
+function decorate() { ed().querySelectorAll('[data-quiz],[data-tree],[data-pdf]').forEach(el => { el.className = 'block'; el.setAttribute('contenteditable', 'false'); el.textContent = blockLabel(el); }); }
+function cleanHtml() {
+  const c = ed().cloneNode(true);
+  c.querySelectorAll('[data-quiz],[data-tree],[data-pdf]').forEach(el => { el.innerHTML = ''; el.removeAttribute('contenteditable'); el.className = 'block'; });
+  return c.innerHTML.trim();
+}
+function edSetMode(m) {
+  $('ed-tabs').style.display = m === 'full' ? 'none' : 'flex';
+  $('ed-toolbar').style.display = m === 'visual' ? 'flex' : 'none';
+  ed().style.display = m === 'visual' ? 'block' : 'none';
+  $('ed-src').style.display = m === 'visual' ? 'none' : 'block';
+  $('b-src').style.display = m === 'full' ? 'none' : ''; $('b-full').style.display = m === 'tab' ? 'none' : '';
+  $('b-src').textContent = m === 'tab' ? '↩ ویرایشگر بصری' : '‹/› کد HTML تب';
+  $('b-full').textContent = m === 'full' ? '↩ بازگشت به ویرایشگر' : '{ } کد کامل درس';
+}
+const fullToTabs = val => val.trim() ? parseTabs(val).map(t => ({ name:t.name, html:t.content })) : [{ name:'محتوا', html:'' }];
+function edCommit() { edTabs[edIdx].html = edSrc ? $('ed-src').value : cleanHtml(); }
+function edLoad() { edRange = null; ed().innerHTML = legacyClean(edTabs[edIdx].html || '') || '<p><br></p>'; decorate(); }
+function edRenderTabs() {
+  $('ed-tabs').innerHTML = edTabs.map((t, i) => `<button class="chip ${i === edIdx ? 'on' : ''}" data-act="ed-tab" data-id="${i}">${esc(t.name)}</button>`).join('') +
+    `<button class="chip" data-act="ed-addtab">＋ تب</button><button class="chip" data-act="ed-rename">✏️ نام تب</button><button class="chip" data-act="ed-deltab">🗑 حذف تب</button>`;
+}
+function openEditor() {
+  const l = L(); $('ed-title').textContent = 'ویرایش: ' + l.title;
+  edTabs = parseTabs(l.fullHtml).map(t => ({ name:t.name, html:t.content.includes('empty-state') && !l.fullHtml ? '' : t.content }));
+  edIdx = Math.min(S.t, edTabs.length - 1); edSrc = false;
+  edFull = false; edSetMode('visual');
+  document.execCommand('styleWithCSS', false, false);
+  edLoad(); edRenderTabs(); $('editor').classList.add('show');
+}
+function edFocus() { ed().focus(); if (edRange) { const s = getSelection(); s.removeAllRanges(); s.addRange(edRange); } }
+function edInsert(html) { edFocus(); if (!document.execCommand('insertHTML', false, html)) ed().insertAdjacentHTML('beforeend', html); decorate(); }
+const blockHtml = (type, payload) => `<div class="block" data-${type}="${enc(payload)}" contenteditable="false"></div><p><br></p>`;
+
+ed().addEventListener('click', e => { const b = e.target.closest('[data-quiz],[data-tree]'); if (!b) return; edBlock = b; b.dataset.quiz ? openQuizDlg(b) : openTreeDlg(b); });
+ed().addEventListener('paste', e => { e.preventDefault(); document.execCommand('insertText', false, (e.clipboardData || window.clipboardData).getData('text/plain')); });
+
+function cmd(id) {
+  if (id === 'image') return $('file-img').click();
+  if (id === 'pdf') return $('file-pdf').click();
+  if (id === 'quiz') { edBlock = null; return openQuizDlg(null); }
+  if (id === 'tree') { edBlock = null; return openTreeDlg(null); }
+  edFocus();
+  const x = (c, v) => document.execCommand(c, false, v);
+  ({
+    bold:() => x('bold'), italic:() => x('italic'), underline:() => x('underline'),
+    h2:() => x('formatBlock', '<h2>'), h3:() => x('formatBlock', '<h3>'), quote:() => x('formatBlock', '<blockquote>'),
+    ul:() => x('insertUnorderedList'), ol:() => x('insertOrderedList'),
+    note:() => edInsert('<div class="note">متن نکته را بنویسید</div><p><br></p>'),
+    link:() => { const u = prompt('آدرس لینک (با https://)'); if (u && /^https?:\/\//i.test(u)) x('createLink', u); },
+    table:() => edInsert('<table><tbody>' + '<tr><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>'.repeat(3) + '</tbody></table><p><br></p>'),
+    clear:() => { x('removeFormat'); x('formatBlock', '<p>'); }
+  })[id]();
+}
+
+function compressImage(file, m = 1200, q = 0.78) {
+  return new Promise((res, rej) => {
+    const img = new Image(), url = URL.createObjectURL(file);
+    img.onload = () => {
+      const k = Math.min(1, m / Math.max(img.width, img.height));
+      const c = document.createElement('canvas'); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+      const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url); res(c.toDataURL('image/jpeg', q));
+    };
+    img.onerror = () => rej(new Error('تصویر خوانده نشد'));
+    img.src = url;
+  });
+}
+$('file-img').addEventListener('change', async e => {
+  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  try { edInsert('<img src="' + await compressImage(f) + '" alt=""><p><br></p>'); } catch (err) { alert(err.message); }
+});
+$('file-pdf').addEventListener('change', e => {
+  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  if (f.size > 4 * 1024 * 1024) return alert('حجم PDF باید کمتر از ۴ مگابایت باشد.');
+  const r = new FileReader(); r.onload = () => edInsert(`<div class="block" data-pdf="${r.result}" data-name="${esc(f.name)}" contenteditable="false"></div><p><br></p>`); r.readAsDataURL(f);
+});
+
+/* دیالوگ عمومی */
+let dlgSave = null;
+function openDlg(title, html, onSave) { $('dlg-title').textContent = title; $('dlg-body').innerHTML = html; dlgSave = onSave; $('dlg').classList.add('show'); }
+const closeDlg = () => { $('dlg').classList.remove('show'); dlgSave = null; };
+
+let itImg = null;
+function itPrev() { $('it-prev').innerHTML = itImg ? `<img src="${itImg}" alt="" style="width:100%;max-height:180px;object-fit:cover;border-radius:12px">` : ''; }
+function itemDlg(title, item, emoji, onSave) {
+  itImg = item.img || null;
+  openDlg(title, `<input class="field" id="it-t" placeholder="عنوان" value="${esc(item.title || '')}">
+    ${emoji ? `<input class="field" id="it-i" placeholder="آیکون ایموجی (وقتی تصویر ندارید)" value="${esc(item.icon || '')}">` : ''}
+    <div class="prow"><span>تصویر (اختیاری)</span><div style="display:flex;gap:6px"><button class="btn ghost sm" data-act="it-pick">انتخاب / عکس</button><button class="btn ghost sm" data-act="it-clear">حذف</button></div></div>
+    <div id="it-prev"></div><input type="file" id="it-file" accept="image/*" hidden>`, () => {
+    const t = $('it-t').value.trim(); if (!t) { alert('عنوان را بنویسید.'); return false; }
+    onSave(t, emoji ? $('it-i').value.trim() : '', itImg);
+  });
+  itPrev();
+  $('it-file').addEventListener('change', async e => { const f = e.target.files[0]; if (!f) return; try { itImg = await compressImage(f, 480, 0.8); itPrev(); } catch (err) { alert(err.message); } });
+}
+function qCards(qs) {
+  $('qb').innerHTML = qs.map((q, i) => `<div class="qcard"><textarea class="field q-t" rows="2" placeholder="متن سؤال">${esc(q.t)}</textarea>
+    ${[0, 1, 2, 3].map(j => `<div class="optrow"><input type="radio" name="a${i}" value="${j}" ${q.a === j ? 'checked' : ''}><input class="field q-o" style="margin:0 0 8px" placeholder="گزینه ${fa(j + 1)}" value="${esc(q.o[j] || '')}"></div>`).join('')}
+    <input class="field q-e" placeholder="پاسخ تشریحی (اختیاری)" value="${esc(q.e || '')}"><button class="btn ghost sm" data-act="q-del" data-id="${i}">حذف سؤال</button></div>`).join('');
+}
+function qRead() {
+  return [...document.querySelectorAll('#qb .qcard')].map(c => ({ t:c.querySelector('.q-t').value.trim(), o:[...c.querySelectorAll('.q-o')].map(x => x.value.trim()), a:+((c.querySelector('input[type=radio]:checked') || { value:0 }).value), e:c.querySelector('.q-e').value.trim() }));
+}
+function openQuizDlg(el) {
+  let qs = el && dec(el.dataset.quiz) ? dec(el.dataset.quiz).q : [];
+  if (!qs.length) qs = [{ t:'', o:['', '', '', ''], a:0, e:'' }];
+  openDlg('سازنده آزمون', '<div id="qb"></div><button class="btn ghost block" data-act="q-add">＋ افزودن سؤال</button><p style="font-size:.8rem;color:var(--muted);margin-top:8px">گزینه صحیح را با دایره کنار آن انتخاب کنید. گزینه‌های خالی نادیده گرفته می‌شوند.</p>', () => {
+    const out = [];
+    for (const q of qRead()) {
+      if (!q.t) continue;
+      const keep = q.o.map((t, i) => t ? i : -1).filter(i => i >= 0);
+      if (keep.length < 2) { alert('هر سؤال حداقل ۲ گزینه لازم دارد.'); return false; }
+      if (!keep.includes(q.a)) { alert('گزینه صحیح نباید خالی باشد.'); return false; }
+      out.push({ t:q.t, o:keep.map(i => q.o[i]), a:keep.indexOf(q.a), e:q.e });
+    }
+    if (!out.length) { alert('حداقل یک سؤال بنویسید.'); return false; }
+    if (edBlock) { edBlock.setAttribute('data-quiz', enc({ q:out })); decorate(); } else edInsert(blockHtml('quiz', { q:out }));
+  });
+  qCards(qs);
+}
+function openTreeDlg(el) {
+  const d = el && dec(el.dataset.tree) || { r:'', b:[] };
+  openDlg('سازنده نمودار درختی', `<input class="field" id="tr-r" placeholder="موضوع اصلی" value="${esc(d.r)}"><textarea class="field" id="tr-b" rows="8" placeholder="هر شاخه در یک خط:&#10;عنوان: توضیح">${esc((d.b || []).map(x => x.t + (x.d ? ': ' + x.d : '')).join('\n'))}</textarea>`, () => {
+    const r = $('tr-r').value.trim(); if (!r) { alert('موضوع اصلی را بنویسید.'); return false; }
+    const b = $('tr-b').value.split('\n').map(s => s.trim()).filter(Boolean).map(s => { const i = s.search(/[:：]/); return i < 0 ? { t:s, d:'' } : { t:s.slice(0, i).trim(), d:s.slice(i + 1).trim() }; });
+    if (edBlock) { edBlock.setAttribute('data-tree', enc({ r, b })); decorate(); } else edInsert(blockHtml('tree', { r, b }));
+  });
+}
+
+/* ================= خروجی‌ها ================= */
+function download(content, name, type) { const u = URL.createObjectURL(content instanceof Blob ? content : new Blob([content], { type })); const a = document.createElement('a'); a.href = u; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(u), 3000); }
+
+const crcT = (() => { const t = []; for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+const crc32 = u => { let c = 0xFFFFFFFF; for (let i = 0; i < u.length; i++) c = crcT[(c ^ u[i]) & 255] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; };
+function makeZip(files) {
+  const te = new TextEncoder(), parts = [], cen = []; let off = 0; const d = new Date();
+  const tm = (d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1), dt = ((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate();
+  files.forEach(f => {
+    const n = te.encode(f.name), crc = crc32(f.data), sz = f.data.length;
+    const lh = new DataView(new ArrayBuffer(30));
+    lh.setUint32(0, 0x04034b50, true); lh.setUint16(4, 20, true); lh.setUint16(6, 0x0800, true); lh.setUint16(10, tm, true); lh.setUint16(12, dt, true);
+    lh.setUint32(14, crc, true); lh.setUint32(18, sz, true); lh.setUint32(22, sz, true); lh.setUint16(26, n.length, true);
+    parts.push(new Uint8Array(lh.buffer), n, f.data);
+    const ch = new DataView(new ArrayBuffer(46));
+    ch.setUint32(0, 0x02014b50, true); ch.setUint16(4, 20, true); ch.setUint16(6, 20, true); ch.setUint16(8, 0x0800, true); ch.setUint16(12, tm, true); ch.setUint16(14, dt, true);
+    ch.setUint32(16, crc, true); ch.setUint32(20, sz, true); ch.setUint32(24, sz, true); ch.setUint16(28, n.length, true); ch.setUint32(42, off, true);
+    cen.push(new Uint8Array(ch.buffer), n); off += 30 + n.length + sz;
+  });
+  let cs = 0; cen.forEach(c => cs += c.length);
+  const e = new DataView(new ArrayBuffer(22)); e.setUint32(0, 0x06054b50, true); e.setUint16(8, files.length, true); e.setUint16(10, files.length, true); e.setUint32(12, cs, true); e.setUint32(16, off, true);
+  return new Blob([...parts, ...cen, new Uint8Array(e.buffer)], { type:'application/zip' });
+}
+function iconPng(size, maskable) {
+  return new Promise(res => {
+    const c = document.createElement('canvas'); c.width = c.height = size; const x = c.getContext('2d'); x.fillStyle = '#3a8a5c';
+    if (maskable) x.fillRect(0, 0, size, size); else { const r = size * .2; x.beginPath(); x.moveTo(r, 0); x.arcTo(size, 0, size, size, r); x.arcTo(size, size, 0, size, r); x.arcTo(0, size, 0, 0, r); x.arcTo(0, 0, size, 0, r); x.fill(); }
+    const k = maskable ? .62 : .8, P = (a, b) => [size / 2 + (a - 50) * size / 100 * k, size / 2 + (b - 50) * size / 100 * k];
+    const poly = (col, pts) => { x.fillStyle = col; x.beginPath(); pts.forEach((p, i) => { const q = P(p[0], p[1]); i ? x.lineTo(q[0], q[1]) : x.moveTo(q[0], q[1]); }); x.fill(); };
+    poly('#ffffff', [[50,20],[82,36],[50,52],[18,36]]); poly('#dfe8e2', [[30,44],[50,54],[70,44],[70,62],[50,72],[30,62]]); poly('#f2c94c', [[80,37],[82.5,37],[82.5,58],[80,58]]);
+    c.toBlob(b => b.arrayBuffer().then(a => res(new Uint8Array(a))), 'image/png');
+  });
+}
+const SW_SRC = `const CACHE = '__CACHE__';
+const CORE = ['./', './index.html', './manifest.webmanifest', './data/catalog.js', './icons/icon-192.png', './icons/icon-512.png', './icons/maskable-512.png', './icons/apple-touch-icon.png'];
+const OPTIONAL = ['./fonts/Vazirmatn.woff2'];
+self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(CORE).then(() => Promise.all(OPTIONAL.map(a => c.add(a).catch(() => {})))))); });
+self.addEventListener('message', e => { if (e.data === 'SKIP_WAITING') self.skipWaiting(); });
+self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
+self.addEventListener('fetch', e => {
+  const req = e.request; if (req.method !== 'GET') return;
+  const url = new URL(req.url); if (url.origin !== location.origin) return;
+  if (url.pathname.indexOf('/data/book_') >= 0) return;
+  const nf = req.mode === 'navigate' || url.pathname.endsWith('/data/catalog.js');
+  if (nf) { e.respondWith(fetch(req).then(res => { if (res.ok) { const cp = res.clone(); caches.open(CACHE).then(c => c.put(req, cp)); } return res; }).catch(() => caches.match(req, { ignoreSearch: true }).then(r => r || caches.match('./index.html')))); return; }
+  e.respondWith(caches.match(req, { ignoreSearch: true }).then(r => r || fetch(req).then(res => { if (res.ok) { const cp = res.clone(); caches.open(CACHE).then(c => c.put(req, cp)); } return res; })));
+});`;
+
+function hash(str) { let h = 5381; for (let i = 0; i < str.length; i++) h = ((h << 5) + h + str.charCodeAt(i)) >>> 0; return h.toString(36); }
+const jsSafe = t => t.replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
+
+async function exportStudent() {
+  try {
+    toast('در حال ساخت بسته...');
+    const te = new TextEncoder(), files = [], cat = { stamp:Date.now(), grades:[] }; let n = 0;
+    for (const g of appData) {
+      const cg = { id:g.id, title:g.title, icon:g.icon, img:g.img, active:g.active !== false, books:[] };
+      for (const b of g.books) {
+        n++;
+        const lessons = b.lessons.map(l => ({ id:l.id, title:l.title, img:l.img, fullHtml:l.fullHtml || '', r:hash(l.title + '|' + (l.img || '') + '|' + (l.fullHtml || '')) }));
+        const rev = hash(lessons.map(l => l.id + l.r).join('|')), pk = jsSafe(JSON.stringify({ rev, lessons })), file = 'book_' + n + '_' + rev + '.js';
+        const body = te.encode('window.__PACK__=window.__PACK__||{};window.__PACK__[' + JSON.stringify(b.id) + ']=' + pk + ';');
+        files.push({ name:'data/' + file, data:body });
+        cg.books.push({ id:b.id, title:b.title, icon:b.icon, img:b.img, rev, file, size:body.length, lessons:lessons.map(l => ({ id:l.id, r:l.r })) });
+      }
+      cat.grades.push(cg);
+    }
+    files.push({ name:'data/catalog.js', data:te.encode('window.__CATALOG__=' + jsSafe(JSON.stringify(cat)) + ';') });
+    const html = PRISTINE.replace('<!--INJECT-->', () => '<script>window.__STUDENT__=true;<\/script><script src="data/catalog.js"><\/script>');
+    const manifest = { name:SETTINGS.APP_NAME, short_name:SETTINGS.SHORT_NAME, id:'./', start_url:'./', scope:'./', display:'standalone', dir:'rtl', lang:'fa', background_color:'#f6f7f6', theme_color:'#3a8a5c',
+      icons:[{ src:'icons/icon-192.png', sizes:'192x192', type:'image/png', purpose:'any' },{ src:'icons/icon-512.png', sizes:'512x512', type:'image/png', purpose:'any' },{ src:'icons/maskable-512.png', sizes:'512x512', type:'image/png', purpose:'maskable' }] };
+    files.push(
+      { name:'index.html', data:te.encode(html) },
+      { name:'manifest.webmanifest', data:te.encode(JSON.stringify(manifest, null, 2)) },
+      { name:'sw.js', data:te.encode(SW_SRC.replace('__CACHE__', 'edu-student-' + hash(html))) },
+      { name:'icons/icon-192.png', data:await iconPng(192) }, { name:'icons/icon-512.png', data:await iconPng(512) },
+      { name:'icons/maskable-512.png', data:await iconPng(512, true) }, { name:'icons/apple-touch-icon.png', data:await iconPng(180) },
+      { name:'README.txt', data:te.encode('کل محتویات این پوشه را در ریشه‌ی مخزن GitHub (GitHub Pages) آپلود کنید.\nپوشه data شامل فهرست سبک (catalog.js) و یک فایل برای هر کتاب است. دانش‌آموز هر کتاب را هنگام نیاز دریافت می‌کند.\nبرای به‌روزرسانی: بسته جدید بسازید و پوشه data (و در صورت تغییر برنامه، بقیه فایل‌ها) را جایگزین کنید؛ فایل‌های قدیمی کتاب را حذف کنید.\nفونت: Vazirmatn.woff2 را در پوشه fonts بگذارید.\n') }
+    );
+    try { const r = await fetch('fonts/Vazirmatn.woff2'); if (r.ok) files.push({ name:'fonts/Vazirmatn.woff2', data:new Uint8Array(await r.arrayBuffer()) }); } catch (e) {}
+    download(makeZip(files), 'student-pwa.zip');
+    toast('بسته دانش‌آموز آماده شد');
+  } catch (e) { alert('خطا در ساخت بسته: ' + e.message); }
+}
+
+/* ================= رویدادها ================= */
+const ask = (m, d) => prompt(m, d);
+const ACT = {
+  'tab-nav': id => { if (id === 'home' && S.tab === 'home') nav({ g:null, b:null, l:null }); else nav({ tab:id }); },
+  back: () => { if (S.l) nav({ l:null, t:0 }); else if (S.b) nav({ b:null }); else if (S.g) nav({ g:null }); },
+  'open-grade': id => { const g = appData.find(x => x.id === id); if (g && (g.active !== false || isAdmin)) nav({ tab:'home', g:id, b:null, l:null }); },
+  'open-book': id => openBook(S.g, id),
+  'open-lesson': id => nav({ l:id, t:0 }),
+  'next-lesson': id => nav({ l:id, t:0 }),
+  continue: () => { const p = prog.last; nav({ tab:'home', g:p.g, b:p.b, l:p.l, t:0 }); },
+  'open-result': (id, el) => { const d = el.dataset; if (d.l) nav({ tab:'home', g:d.g, b:d.b, l:d.l, t:0 }); else openBook(d.g, d.b); },
+  tab: id => { S.t = +id; render(); },
+  'toggle-book': () => { toggleMineBook(G(), B()); render(); },
+  status: id => { const st = statusOf(B(), L()); setStatus(B(), L(), id); render(); if (st !== id) toast(id === 'read' ? 'ثبت شد: خواندم ✅' : 'برای مرور علامت خورد 🔁'); },
+  'update-book': async id => { const b = B() || G().books.find(x => x.id === id); if (b) await downloadBook(b); },
+  'mine-remove': (id, el) => { prog.books = prog.books.filter(m => m.b !== el.dataset.b); saveProg(); render(); },
+  // (removed)
+  'reset-progress': () => { if (confirm('پیشرفت، وضعیت درس‌ها و نتایج آزمون این دستگاه پاک شود؟ (فهرست کتاب‌های من حفظ می‌شود)')) { prog.tabs = {}; prog.quiz = {}; prog.status = {}; prog.last = null; saveProg(); render(); } },
+  theme: id => { prefs.theme = id; ls.set('edu_prefs_v1', prefs); applyPrefs(); render(); },
+  fs: id => { prefs.fs = Math.max(13, Math.min(24, prefs.fs + +id)); ls.set('edu_prefs_v1', prefs); applyPrefs(); render(); },
+  install: async () => { if (deferredPrompt) { deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt = null; render(); } else alert('در آیفون/آیپد: در Safari دکمه «اشتراک‌گذاری» را بزنید و Add to Home Screen را انتخاب کنید.'); },
+  'check-update': async () => {
+    let got = null;
+    if (IS_STUDENT) { got = await refreshCatalog(); render(); }
+    if (IS_HOSTED && swReg) { try { await swReg.update(); } catch (e) {} setTimeout(() => { if (swReg.waiting) $('update-banner').style.display = 'block'; }, 1200); }
+    if (IS_STUDENT) {
+      if (!got) toast('اتصال اینترنت برقرار نیست');
+      else toast(appData.some(g => g.books.some(b => bookState(b) === 'update' || b.lessons.some(l => lessonUpdated(b, l)))) ? 'بروزرسانی کتاب‌ها موجود است 🔄' : 'همه‌چیز به‌روز است');
+    } else if (!IS_HOSTED || !swReg) alert('بررسی به‌روزرسانی فقط در نسخه آنلاین فعال است.');
+    else toast('بررسی شد');
+  },
+  'apply-update': () => { if (swReg && swReg.waiting) swReg.waiting.postMessage('SKIP_WAITING'); else location.reload(); },
+  'admin-toggle': () => {
+    if (!isAdmin && SETTINGS.ADMIN_PIN) { const p = prompt('رمز ورود:'); if (p !== SETTINGS.ADMIN_PIN) { if (p !== null) alert('رمز نادرست است.'); return; } }
+    isAdmin = !isAdmin; render();
+  },
+  'export-student': exportStudent,
+  'export-json': () => download(JSON.stringify(appData, null, 2), 'data.json', 'application/json'),
+  'import-json': () => $('file-import').click(),
+  'export-csv': () => {
+    let c = 'پایه,کتاب,درس,محتوا (HTML)\n';
+    appData.forEach(g => g.books.forEach(b => b.lessons.forEach(l => { c += `"${g.title}","${b.title}","${l.title}","${(l.fullHtml || '').replace(/"/g, '""').replace(/\n/g, ' ').replace(/data:[^"']{200,}/g, 'data:...')}"\n`; })));
+    download('\uFEFF' + c, 'backup_platform.csv', 'text/csv;charset=utf-8;');
+  },
+  reset: async () => { if (confirm('تغییرات ذخیره‌شده روی این دستگاه پاک شود و داده از data.json (یا نمونه اولیه) بارگذاری شود؟')) { await store.del('appData'); localStorage.removeItem('my_platform_data_v10'); location.reload(); } },
+
+  'it-pick': () => $('it-file').click(),
+  'it-clear': () => { itImg = null; itPrev(); },
+  'add-grade': () => itemDlg('افزودن پایه', { icon:'🎓' }, true, (t, i, img) => { appData.push({ id:'g_' + Date.now(), title:t, icon:i || '🎓', img:img || undefined, active:true, books:[] }); saveData(); render(); }),
+  'edit-grade': id => { const g = appData.find(x => x.id === id); itemDlg('ویرایش پایه', g, true, (t, i, img) => { g.title = t; g.icon = i || g.icon; if (img) g.img = img; else delete g.img; saveData(); render(); }); },
+  'toggle-grade': id => { const g = appData.find(x => x.id === id); g.active = g.active === false; saveData(); render(); },
+  'del-grade': id => { if (confirm('حذف پایه و همه محتوای آن؟')) { appData = appData.filter(x => x.id !== id); saveData(); render(); } },
+  'add-book': () => itemDlg('افزودن کتاب', { icon:'📘' }, true, (t, i, img) => { G().books.push({ id:'b_' + Date.now(), title:t, icon:i || '📘', img:img || undefined, lessons:[] }); saveData(); render(); }),
+  'edit-book': id => { const b = G().books.find(x => x.id === id); itemDlg('ویرایش کتاب', b, true, (t, i, img) => { b.title = t; b.icon = i || b.icon; if (img) b.img = img; else delete b.img; saveData(); render(); }); },
+  'del-book': id => { if (confirm('حذف کتاب؟')) { G().books = G().books.filter(x => x.id !== id); saveData(); render(); } },
+  'add-lesson': () => itemDlg('افزودن درس', {}, false, (t, i, img) => { B().lessons.push({ id:'l_' + Date.now(), title:t, img:img || undefined, fullHtml:'' }); saveData(); render(); }),
+  'edit-lesson': id => { const l = B().lessons.find(x => x.id === id); itemDlg('ویرایش درس', l, false, (t, i, img) => { l.title = t; if (img) l.img = img; else delete l.img; saveData(); render(); }); },
+  'del-lesson': id => { if (confirm('حذف درس؟')) { B().lessons = B().lessons.filter(x => x.id !== id); saveData(); render(); } },
+  'edit-content': openEditor,
+
+  'pdf-open': (id, el) => { const u = URL.createObjectURL(pdfBlob(el.closest('[data-pdf]').dataset.pdf)); window.open(u, '_blank') || (location.href = u); },
+  'pdf-dl': (id, el) => { const c = el.closest('[data-pdf]'); download(pdfBlob(c.dataset.pdf), c.dataset.name || 'file.pdf'); },
+
+  cmd: id => cmd(id),
+  'ed-close': () => { if (confirm('تغییرات ذخیره‌نشده از بین می‌رود. خارج می‌شوید؟')) $('editor').classList.remove('show'); },
+  'ed-tab': id => { edCommit(); edIdx = +id; if (edSrc) $('ed-src').value = edTabs[edIdx].html; else edLoad(); edRenderTabs(); },
+  'ed-addtab': () => { const n = ask('نام تب جدید:'); if (!n) return; edCommit(); edTabs.push({ name:n, html:'' }); edIdx = edTabs.length - 1; edSrc ? $('ed-src').value = '' : edLoad(); edRenderTabs(); },
+  'ed-rename': () => { const n = ask('نام تب:', edTabs[edIdx].name); if (n) { edTabs[edIdx].name = n; edRenderTabs(); } },
+  'ed-deltab': () => { if (edTabs.length < 2) return alert('حداقل یک تب لازم است.'); if (!confirm('این تب حذف شود؟')) return; edTabs.splice(edIdx, 1); edIdx = Math.max(0, edIdx - 1); edSrc ? $('ed-src').value = edTabs[edIdx].html : edLoad(); edRenderTabs(); },
+  'ed-source': () => {
+    if (edFull) return;
+    if (!edSrc) { $('ed-src').value = cleanHtml(); edSrc = true; edSetMode('tab'); }
+    else { edTabs[edIdx].html = $('ed-src').value; edSrc = false; edSetMode('visual'); edLoad(); }
+  },
+  'ed-full': () => {
+    if (!edFull) { edCommit(); $('ed-src').value = edTabs.map(t => `<!-- TAB: ${t.name} -->\n${t.html}`).join('\n'); edSrc = false; edFull = true; edSetMode('full'); }
+    else { edTabs = fullToTabs($('ed-src').value); edIdx = 0; edFull = false; edSetMode('visual'); edLoad(); edRenderTabs(); }
+  },
+  'ed-save': async () => {
+    if (edFull) edTabs = fullToTabs($('ed-src').value); else edCommit();
+    L().fullHtml = edTabs.map(t => `<!-- TAB: ${t.name.replace(/-->/g, '')} -->\n${t.html}`).join('\n');
+    await saveData(); $('editor').classList.remove('show'); S.t = Math.min(edIdx, edTabs.length - 1); render(); toast('ذخیره شد');
+  },
+  'dlg-close': closeDlg,
+  'dlg-save': () => { if (dlgSave && dlgSave() !== false) closeDlg(); },
+  'q-add': () => { const q = qRead(); q.push({ t:'', o:['', '', '', ''], a:0, e:'' }); qCards(q); },
+  'q-del': id => { const q = qRead(); q.splice(+id, 1); qCards(q.length ? q : [{ t:'', o:['', '', '', ''], a:0, e:'' }]); }
+};
+const ADMIN_ACTS = new Set(['export-student','export-json','import-json','export-csv','reset','add-grade','edit-grade','toggle-grade','del-grade','add-book','edit-book','del-book','add-lesson','edit-lesson','del-lesson','edit-content','admin-toggle','ed-save']);
+document.addEventListener('click', e => { const el = e.target.closest('[data-act]'); if (!el) return; const a = el.dataset.act; if (ADMIN_ACTS.has(a) && !ADMIN_ALLOWED) return; const f = ACT[a]; if (f) f(el.dataset.id, el, e); });
+
+$('file-import').addEventListener('change', e => {
+  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  const r = new FileReader();
+  r.onload = async () => { try { const d = JSON.parse(r.result); if (!validData(d)) return alert('ساختار فایل معتبر نیست.'); appData = d; await saveData(); nav({ tab:'home', g:null, b:null, l:null }, false); toast('اطلاعات وارد شد'); } catch (err) { alert('فایل JSON خراب است.'); } };
+  r.readAsText(f);
+});
+
+/* ================= شروع ================= */
+(async function init() {
+  document.title = SETTINGS.APP_NAME;
+  applyPrefs();
+  try { await loadData(); } catch (e) { window.onerror(e.message, '', 0); }
+  history.replaceState(JSON.parse(JSON.stringify(S)), '');
+  render(); setupPWA();
+})();
+</script></body></html>
