@@ -1,1 +1,1 @@
-window.__CONF__={"appName":"پلتفرم آموزشی","shortName":"آموزشیار","color":"#40a23f","goftino":"https://www.goftino.com/c/itfpep","supportUrl":"","version":"3.0.1"};
+window.__CONF__={"appName":"پلتفرم آموزشی","shortName":"آموزشیار","color":"#3a8a5c","goftino":"","supportUrl":"","version":"1.0.0"};
