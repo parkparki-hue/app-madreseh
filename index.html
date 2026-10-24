@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-<script>window.__STUDENT__=true;</script><script src="data/conf.js"></script><script src="data/catalog.js"></script>
+<script>window.__STUDENT__=true;</script><script src="data/conf.js"></script><script src="data/home.js"></script><script src="data/catalog.js"></script>
 <style>
 @font-face { font-family:'Vazirmatn'; src: local('Vazirmatn'), url('fonts/Vazirmatn.woff2') format('woff2'); font-display: swap; }
 :root {
@@ -72,6 +72,19 @@ body.admin-on .ctrl { display:flex; }
 .ci img { width:100%; height:100%; object-fit:cover; display:block; }
 .thumb { width:46px; height:46px; border-radius:12px; object-fit:cover; flex-shrink:0; }
 .lp { padding:14px; }
+.bn { position:relative; border-radius:18px; overflow:hidden; margin-bottom:14px; background:var(--soft); }
+.bn a { display:block; height:100%; } .bn img { display:block; width:100%; height:100%; object-fit:cover; }
+.bn.top { aspect-ratio:3/1; } .bn.bot { aspect-ratio:2/1; margin-bottom:0; }
+.bn-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; } .bn-row:empty { display:none; }
+.bn.empty-bn { display:flex; align-items:center; justify-content:center; border:2px dashed var(--accent); background:transparent; color:var(--accent); cursor:pointer; font-weight:700; font-size:.88rem; text-align:center; }
+.swatches { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:12px; }
+.sw { width:38px; height:38px; border-radius:50%; border:3px solid var(--surface); box-shadow:0 0 0 1px var(--line); cursor:pointer; padding:0; }
+.sw.on { box-shadow:0 0 0 3px var(--text); }
+.sw.custom { display:flex; align-items:center; justify-content:center; background:var(--soft); position:relative; overflow:hidden; font-size:1rem; }
+.sw.custom input { position:absolute; inset:0; opacity:0; width:100%; height:100%; cursor:pointer; }
+.lh { margin-bottom:.8rem; }
+.tabview[hidden] { display:none !important; }
+.tabview .tab-content, .tabview .tab-pane, .tabview .tab-panel, .tabview .tabpanel, .tabview .tabcontent, .tabview [role="tabpanel"], .tabview [data-tab-content], .tabview [data-tab-panel] { display:block !important; visibility:visible !important; opacity:1 !important; }
 a.btn { text-decoration:none; display:inline-block; text-align:center; }
 .ratio { position:relative; padding-top:56.25%; border-radius:12px; overflow:hidden; background:#000; }
 .ratio iframe { position:absolute; inset:0; width:100%; height:100%; border:0; }
@@ -184,6 +197,7 @@ mark { background:var(--accent-soft); color:var(--accent); border-radius:4px; pa
   <div class="sheet-head"><strong id="ed-title">ویرایش درس</strong><button class="btn ghost sm" data-act="ed-close">✕</button></div>
   <div class="sheet-body">
     <div class="chips" id="ed-tabs"></div>
+    <div id="ed-hdr-note" style="display:none;font-size:.8rem;color:var(--muted);margin-bottom:8px">⚙️ این درس سربرگ مشترک (عنوان، استایل، اسکریپت) دارد که برای همه تب‌ها اعمال می‌شود و فقط در «کد کامل درس» قابل ویرایش است.</div>
     <div class="toolbar" id="ed-toolbar">
       <button data-act="cmd" data-id="bold"><b>B</b></button><button data-act="cmd" data-id="italic"><i>I</i></button><button data-act="cmd" data-id="underline"><u>U</u></button>
       <button data-act="cmd" data-id="h2">تیتر</button><button data-act="cmd" data-id="h3">زیرتیتر</button>
@@ -319,6 +333,59 @@ function validData(d) { return Array.isArray(d) && d.every(g => g && typeof g.ti
 async function saveData() { searchIndex = null; try { await store.set('appData', appData); } catch (e) { alert('ذخیره‌سازی ناموفق بود (حافظه دستگاه پر است؟): ' + e.message); } }
 
 /* ================= تنظیمات خروجی (نام، آیکون، رنگ، چت) ================= */
+let home = { cats:[{ id:'c1', title:'ابتدایی (پایه ۱ تا ۶)' }, { id:'c2', title:'متوسطه اول (پایه ۷ تا ۹)' }, { id:'c3', title:'متوسطه دوم (پایه ۱۰ تا ۱۲)' }], banners:{} };
+const saveHome = () => store.set('home', home).catch(() => {});
+function catOf(g) {
+  if (g.cat !== undefined) return g.cat;
+  const m = /^g(\d+)$/.exec(g.id || '');
+  if (m) { const n = +m[1], id = n <= 6 ? 'c1' : n <= 9 ? 'c2' : n <= 12 ? 'c3' : ''; if (home.cats.some(c => c.id === id)) return id; }
+  return '';
+}
+const BN_LABEL = { top:'بنر بالا (نسبت ۳:۱ — مثلا ۱۲۰۰×۴۰۰)', b1:'بنر پایین اول (نسبت ۲:۱ — مثلا ۸۰۰×۴۰۰)', b2:'بنر پایین دوم (نسبت ۲:۱ — مثلا ۸۰۰×۴۰۰)' };
+function bannerHtml(key, cls) {
+  const b = home.banners[key];
+  if (b && b.img) {
+    const u = /^https?:\/\//i.test(b.url || '') ? b.url : '', ext = /^https?:/i.test(b.img), img = `<img src="${esc(b.img)}" alt=""${ext ? ' referrerpolicy="no-referrer"' : ''}${ext && !isAdmin ? ' onerror="this.closest(\'.bn\').style.display=\'none\'"' : ''}>`;
+    return `<div class="bn ${cls}">${u ? `<a href="${esc(u)}" target="_blank" rel="noopener">${img}</a>` : img}${isAdmin ? `<div class="ctrl"><button data-act="edit-banner" data-id="${key}">✏️</button></div>` : ''}</div>`;
+  }
+  return isAdmin ? `<div class="bn ${cls} empty-bn" data-act="edit-banner" data-id="${key}">＋ ${key === 'top' ? 'بنر بالا' : key === 'b1' ? 'بنر پایین ۱' : 'بنر پایین ۲'}</div>` : '';
+}
+function gradeCard(g) {
+  const c = isAdmin ? `<div class="ctrl"><button data-act="edit-grade" data-id="${esc(g.id)}">✏️</button><button data-act="toggle-grade" data-id="${esc(g.id)}">${g.active === false ? '🔓' : '🔒'}</button><button data-act="del-grade" data-id="${esc(g.id)}">🗑</button></div>` : '';
+  return `<div class="card ${g.active === false ? 'off' : ''}" data-act="open-grade" data-id="${esc(g.id)}">${c}${ciHtml(g)}<div class="ct">${esc(g.title)}</div><div class="cs">${fa(g.books.length)} کتاب</div></div>`;
+}
+const grpField = b => { const gs = [...new Set(G().books.flatMap(x => String(x.group || '').split(/[،,]/).map(y => y.trim()).filter(Boolean)))]; return `<div class="prow"><span>دسته / رشته (چند دسته را با ، جدا کنید)</span></div><input class="field" id="it-grp" list="grp-list" placeholder="مثلا: عمومی  یا  ریاضی و فیزیک، علوم تجربی" value="${esc(b.group || '')}"><datalist id="grp-list">${gs.map(x => `<option value="${esc(x)}">`).join('')}</datalist>`; };
+const catSelect = g => `<div class="prow"><span>دسته‌بندی</span></div><select class="field" id="it-cat"><option value="">بدون دسته (سایر)</option>${home.cats.map(c => `<option value="${esc(c.id)}" ${catOf(g) === c.id ? 'selected' : ''}>${esc(c.title)}</option>`).join('')}</select>`;
+let bnImg = null;
+function bnPrev() { $('bn-prev').innerHTML = bnImg ? `<img src="${bnImg}" alt="" style="width:100%;max-height:170px;object-fit:cover;border-radius:12px;margin-bottom:10px">` : ''; }
+function openBannerDlg(key) {
+  const b = home.banners[key] || {}; bnImg = b.img || null;
+  openDlg(BN_LABEL[key], `<div class="prow"><span>تصویر بنر</span><div style="display:flex;gap:6px"><button class="btn ghost sm" data-act="bn-pick">انتخاب</button><button class="btn ghost sm" data-act="bn-clear">حذف بنر</button></div></div>
+    <div id="bn-prev"></div><input type="file" id="bn-file" accept="image/*" hidden>
+    <input class="field" id="bn-img-url" dir="ltr" placeholder="یا لینک مستقیم تصویر (https://.../banner.jpg)" value="${esc(/^https?:/i.test(bnImg || '') ? bnImg : '')}">
+    <input class="field" id="bn-url" dir="ltr" placeholder="لینک اختصاصی بنر (https://...)" value="${esc(b.url || '')}">
+    <p style="font-size:.78rem;color:var(--muted)">با لمس بنر، لینک اختصاصی باز می‌شود. تصویر یا آپلود می‌شود یا از لینک خوانده و روی دستگاه ذخیره (کش) می‌شود تا آفلاین هم دیده شود. لینک تصویر باید مستقیم باشد و https داشته باشد.</p>`, () => {
+    const u = $('bn-url').value.trim(); if (u && !/^https?:\/\//i.test(u)) { alert('لینک باید با https شروع شود.'); return false; }
+    const iu = $('bn-img-url').value.trim(); if (iu) { if (!/^https?:\/\//i.test(iu)) { alert('لینک تصویر باید با https شروع شود.'); return false; } bnImg = iu; }
+    if (bnImg) home.banners[key] = { img:bnImg, url:u }; else delete home.banners[key];
+    saveHome(); render();
+  });
+  bnPrev();
+  $('bn-img-url').addEventListener('input', e => { const v = e.target.value.trim(); if (/^https?:\/\//i.test(v)) { bnImg = v; bnPrev(); } });
+  $('bn-file').addEventListener('change', async e => { const f = e.target.files[0]; if (!f) return; try { bnImg = await compressImage(f, 1200, 0.8); $('bn-img-url').value = ''; bnPrev(); } catch (err) { alert(err.message); } });
+}
+function renderCatRows(cs) { $('cat-rows').innerHTML = cs.map(c => `<div class="optrow" data-cid="${esc(c.id || '')}"><input class="field" style="margin-bottom:8px" value="${esc(c.title)}" placeholder="نام دسته"><button class="btn ghost sm" style="margin-bottom:8px" data-act="cat-del">🗑</button></div>`).join(''); }
+const readCatRows = () => [...document.querySelectorAll('#cat-rows .optrow')].map(r => ({ id:r.dataset.cid, title:r.querySelector('input').value.trim() }));
+function openCatsDlg() {
+  openDlg('دسته‌بندی پایه‌ها', '<div id="cat-rows"></div><button class="btn ghost block" data-act="cat-add">＋ افزودن دسته</button><p style="font-size:.78rem;color:var(--muted);margin-top:8px">دسته هر پایه را از ✏️ روی کارت پایه انتخاب کنید. پایه‌های «پایه ۱ تا ۱۲» که از فایل آماده وارد شده‌اند خودکار در دسته مناسب هستند.</p>', () => {
+    home.cats = readCatRows().filter(r => r.title).map(r => ({ id:r.id || 'c_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), title:r.title }));
+    saveHome(); render();
+  });
+  renderCatRows(home.cats);
+}
+const THEMES = ['#3a8a5c', '#2f6fbf', '#7b4fbf', '#d9822b', '#c0392b', '#1f9aa8', '#d1488a', '#8a5a3a', '#37474f'];
+const okHex = h => /^#[0-9a-f]{6}$/i.test(h || '');
+function accentColor() { return okHex(prefs.accent) ? prefs.accent : okHex(conf.color) ? conf.color : '#3a8a5c'; }
 let conf = { appName:'', shortName:'', color:'#3a8a5c', packageId:'com.example.edu', version:'1.0.0', icon:null, goftino:'', supportUrl:'' };
 const hex2 = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
 const toHex = a => '#' + a.map(v => Math.round(v).toString(16).padStart(2, '0')).join('');
@@ -329,7 +396,7 @@ function applyConf() {
   if (conf.appName) SETTINGS.APP_NAME = conf.appName;
   if (conf.shortName) SETTINGS.SHORT_NAME = conf.shortName;
   document.title = SETTINGS.APP_NAME;
-  const c = /^#[0-9a-f]{6}$/i.test(conf.color) ? conf.color : '#3a8a5c', d = mixC(c, '#ffffff', .25);
+  const c = accentColor(), d = mixC(c, '#ffffff', .25);
   let st = document.getElementById('conf-style'); if (!st) { st = document.createElement('style'); st.id = 'conf-style'; document.head.appendChild(st); }
   st.textContent = `:root{--accent:${c};--accent-ink:${inkFor(c)};--accent-soft:${mixC(c, '#ffffff', .88)}}[data-theme="dark"]{--accent:${d};--accent-ink:${inkFor(d)};--accent-soft:${mixC(c, '#1a211d', .8)}}`;
 }
@@ -448,7 +515,7 @@ function openAccessDlg(b) {
 function applyCatalog(cat) {
   const old = {}; appData.forEach(g => g.books.forEach(b => old[b.id] = b));
   appData = cat.grades.map(g => ({ ...g, books:g.books.map(b => { const o = old[b.id];
-    return { id:b.id, title:b.title, icon:b.icon, img:b.img, meta:{ rev:b.rev, size:b.size, file:b.file, lessons:b.lessons }, acc:b.acc, lessons:o ? o.lessons : [], dl:o ? o.dl : null }; }) }));
+    return { id:b.id, title:b.title, icon:b.icon, img:b.img, group:b.group, meta:{ rev:b.rev, size:b.size, file:b.file, lessons:b.lessons }, acc:b.acc, lessons:o ? o.lessons : [], dl:o ? o.dl : null }; }) }));
   searchIndex = null;
 }
 async function loadStudent() {
@@ -501,7 +568,7 @@ async function loadData() {
   if (IS_HOSTED) {
     try {
       const r = await fetch('data.json', { cache:'no-cache' });
-      if (r.ok) { const d = await r.json(); if (validData(d)) { appData = d; return; } }
+      if (r.ok) { const j = await r.json(), d = Array.isArray(j) ? j : j && j.grades; if (validData(d)) { appData = d; if (j.home) Object.assign(home, j.home); return; } }
     } catch (e) {}
   }
   appData = IS_STUDENT ? [] : JSON.parse(JSON.stringify(initialData));
@@ -512,7 +579,7 @@ function applyPrefs() {
   const dark = prefs.theme === 'dark' || (prefs.theme === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches);
   document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
   document.documentElement.style.fontSize = prefs.fs + 'px';
-  $('meta-theme').content = dark ? '#111614' : ((conf && conf.color) || '#3a8a5c');
+  $('meta-theme').content = dark ? '#111614' : accentColor();
 }
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyPrefs);
 
@@ -584,33 +651,35 @@ function renderHome(v) {
   if (S.g && G()) return renderBooks(v);
   let last = null;
   if (prog.last) { const g = appData.find(x => x.id === prog.last.g), b = g && g.books.find(x => x.id === prog.last.b), l = b && b.lessons.find(x => x.id === prog.last.l); if (l) last = { g, b, l }; }
-  let h = `<div class="searchbox" data-act="tab-nav" data-id="search"><span class="ico">${ICONS.search}</span><input placeholder="جستجو در درس‌های دریافت‌شده" readonly></div>`;
+  let h = bannerHtml('top', 'top') + `<div class="searchbox" data-act="tab-nav" data-id="search"><span class="ico">${ICONS.search}</span><input placeholder="جستجو در درس‌های دریافت‌شده" readonly></div>`;
   if (last) { const p = lessonProg(last.b, last.l);
     h += `<div class="hero"><small>ادامه یادگیری</small><h3>${esc(last.l.title)}</h3><div class="bar"><i style="width:${p.p}%"></i></div><small>${fa(p.p)}٪ · ${esc(last.b.title)}</small><br><button class="btn" data-act="continue">ادامه</button></div>`;
   } else h += `<div class="hero"><small>خوش آمدید</small><h3>یک پایه را انتخاب کنید</h3><small>کتاب‌های دلخواه را به «کتاب‌های من» اضافه کنید تا پیشرفتشان را ببینید.</small></div>`;
-  h += `<h2 class="sec">پایه‌های تحصیلی</h2>`;
   if (!appData.length) h += `<div class="empty">هنوز محتوایی منتشر نشده است.</div>`;
-  h += `<div class="grid">`;
-  if (isAdmin) h += `<div class="card add" data-act="add-grade"><div style="font-size:1.6rem">＋</div>افزودن پایه</div>`;
-  appData.forEach(g => {
-    if (g.active === false && !isAdmin) return;
-    const c = isAdmin ? `<div class="ctrl"><button data-act="edit-grade" data-id="${esc(g.id)}">✏️</button><button data-act="toggle-grade" data-id="${esc(g.id)}">${g.active === false ? '🔓' : '🔒'}</button><button data-act="del-grade" data-id="${esc(g.id)}">🗑</button></div>` : '';
-    h += `<div class="card ${g.active === false ? 'off' : ''}" data-act="open-grade" data-id="${esc(g.id)}">${c}${ciHtml(g)}<div class="ct">${esc(g.title)}</div><div class="cs">${fa(g.books.length)} کتاب</div></div>`;
-  });
-  v.innerHTML = h + '</div>';
+  if (isAdmin) h += `<div class="stack" style="margin:16px 0 4px"><button class="btn ghost block" data-act="add-grade">＋ افزودن پایه</button><button class="btn ghost block" data-act="cats-edit">🗂 مدیریت دسته‌بندی پایه‌ها</button></div>`;
+  const vis = appData.filter(g => g.active !== false || isAdmin);
+  const groups = home.cats.map(c => ({ c, gs:vis.filter(g => catOf(g) === c.id) }));
+  const rest = vis.filter(g => !home.cats.some(c => c.id === catOf(g)));
+  if (rest.length) groups.push({ c:{ id:'', title:'سایر پایه‌ها' }, gs:rest });
+  groups.forEach(x => { if (x.gs.length) h += `<h2 class="sec">${esc(x.c.title)}</h2><div class="grid">${x.gs.map(gradeCard).join('')}</div>`; });
+  h += `<div class="bn-row" style="margin-top:22px">${bannerHtml('b1', 'bot')}${bannerHtml('b2', 'bot')}</div>`;
+  v.innerHTML = h;
 }
 
 function renderBooks(v) {
-  const g = G(); let h = `<div class="grid">`;
-  if (isAdmin) h += `<div class="card add" data-act="add-book"><div style="font-size:1.6rem">＋</div>افزودن کتاب</div>`;
-  g.books.forEach(b => {
+  const g = G(), order = [], map = {};
+  g.books.forEach(b => { const ls_ = String(b.group || '').split(/[،,]/).map(x => x.trim()).filter(Boolean); (ls_.length ? ls_ : ['']).forEach(k => { if (!(k in map)) { map[k] = []; order.push(k); } map[k].push(b); }); });
+  const card = b => {
     const st = bookState(b);
     const badge = dlBusy[b.id] ? '<div class="bdg">⏳ در حال دریافت</div>' : st === 'none' ? `<div class="bdg">⬇ ${fmtSize(b.meta.size)}</div>` : st === 'update' ? '<div class="bdg up">🔄 بروزرسانی</div>' : '';
     const star = isMineBook(b) ? '<div class="bdg mine">★</div>' : '';
     const c = isAdmin ? `<div class="ctrl"><button data-act="edit-book" data-id="${esc(b.id)}">✏️</button><button data-act="book-access" data-id="${esc(b.id)}">💰</button><button data-act="del-book" data-id="${esc(b.id)}">🗑</button></div>` : '';
-    h += `<div class="card" data-act="open-book" data-id="${esc(b.id)}">${c}${badge}${star}${ciHtml(b)}<div class="ct">${esc(b.title)}</div><div class="cs">${fa(bookTotal(b))} درس</div></div>`;
-  });
-  v.innerHTML = h + '</div>' + (g.books.length || isAdmin ? '' : '<div class="empty">کتابی ثبت نشده است.</div>');
+    return `<div class="card" data-act="open-book" data-id="${esc(b.id)}">${c}${badge}${star}${ciHtml(b)}<div class="ct">${esc(b.title)}</div><div class="cs">${fa(bookTotal(b))} درس</div></div>`;
+  };
+  let h = isAdmin ? `<button class="btn block ghost" style="margin-bottom:14px" data-act="add-book">＋ افزودن کتاب</button>` : '';
+  if (order.length === 1 && order[0] === '') h += `<div class="grid">${map[''].map(card).join('')}</div>`;
+  else order.forEach(k => { h += `<h2 class="sec">${esc(k || 'سایر کتاب‌ها')}</h2><div class="grid">${map[k].map(card).join('')}</div>`; });
+  v.innerHTML = h + (g.books.length || isAdmin ? '' : '<div class="empty">کتابی ثبت نشده است.</div>');
 }
 
 function renderLessons(v) {
@@ -620,7 +689,7 @@ function renderLessons(v) {
     <button class="btn block ${mine ? 'ghost' : ''}" data-act="toggle-book">${mine ? '★ در کتاب‌های من (برای حذف لمس کنید)' : '＋ افزودن به کتاب‌های من'}</button></div>`;
   if (st === 'update') h += `<div class="panel lp" style="border-color:var(--accent)"><div class="prow" style="padding:0"><span>🔄 نسخه جدیدی از این کتاب موجود است</span><button class="btn sm" data-act="update-book" data-id="${esc(b.id)}">${dlBusy[b.id] ? '⏳' : 'دریافت'}</button></div></div>`;
   h += lockBanner(b);
-  if (isAdmin) h += `<button class="btn block ghost" style="margin-bottom:12px" data-act="add-lesson">＋ افزودن درس</button>`;
+  if (isAdmin) h += `<div class="stack" style="margin-bottom:12px"><button class="btn block ghost" data-act="add-lesson">＋ افزودن درس</button><button class="btn block ghost" data-act="bulk-lessons">☰ افزودن گروهی درس‌ها (هر خط یک درس)</button></div>`;
   b.lessons.forEach(l => {
     const t = statusOf(b, l), up = lessonUpdated(b, l);
     const c = isAdmin ? `<div class="ctrl" style="position:static;display:flex"><button data-act="edit-lesson" data-id="${esc(l.id)}">✏️</button><button data-act="del-lesson" data-id="${esc(l.id)}">🗑</button></div>` : '';
@@ -632,18 +701,80 @@ function renderLessons(v) {
 }
 
 let parsedTabs = [];
-function parseTabs(html) {
-  if (!html || !html.trim()) return [{ name:'محتوا', content:'<div class="empty">محتوایی ثبت نشده است.</div>' }];
-  const re = /<!--\s*TAB:\s*(.*?)\s*-->([\s\S]*?)(?=<!--\s*TAB:|$)/g; let m, t = [];
-  while ((m = re.exec(html)) !== null) t.push({ name:m[1].trim(), content:m[2].trim() });
-  return t.length ? t : [{ name:'محتوا', content:html }];
+/* تشخیص خودکار تب‌های داخل یک صفحه HTML کامل و تبدیل آن‌ها به تب‌های درس */
+function autoSplit(html) {
+  if (!/tab|panel/i.test(html)) return null;
+  let doc; try { doc = new DOMParser().parseFromString(html, 'text/html'); } catch (e) { return null; }
+  const root = doc.body; if (!root) return null;
+  const panelSel = '[role="tabpanel"],.tab-content,.tab-pane,.tab-panel,.tabpanel,.tabcontent,[data-tab-content],[data-tab-panel]';
+  const trigSel = '[role="tab"],[data-tab],[data-tabs-target],[data-bs-target],.tab-btn,.tab-button,.tabbtn,.tablink,.tab-link,.nav-tabs > *,.tabs > *,.tab-nav > *,.tabs-nav > *,.tab-buttons > *,.tab-list > *,[role="tablist"] > *';
+  const all = [...root.querySelectorAll(panelSel)];
+  const leaf = all.filter(p => !all.some(o => o !== p && p.contains(o)));
+  let trigs = [...root.querySelectorAll(trigSel)].filter(t => /^(BUTTON|A|LI|DIV|SPAN|LABEL)$/.test(t.tagName) && !t.matches(panelSel) && !leaf.some(pn => pn.contains(t)) && (t.textContent || '').trim().length > 0 && (t.textContent || '').trim().length < 60);
+  trigs = trigs.filter(t => !trigs.some(o => o !== t && t.contains(o)));
+  const targets = t => {
+    const o = [];
+    ['aria-controls','data-tab','data-tabs-target','data-bs-target','data-target','href','data-panel','data-id','data-tab-target'].forEach(a => { const v = t.getAttribute(a); if (v) o.push(v.replace(/^#/, '')); });
+    ((t.getAttribute('onclick') || '').match(/['"]#?([\w-]+)['"]/g) || []).forEach(q => o.push(q.replace(/['"#]/g, '')));
+    const a = t.querySelector && t.querySelector('a[href^="#"]'); if (a) o.push(a.getAttribute('href').slice(1));
+    return o;
+  };
+  const resolve = t => {
+    for (const id of targets(t)) {
+      if (!id) continue;
+      let el = doc.getElementById(id);
+      if (!el) el = leaf.find(pn => pn.getAttribute('data-tab') === id || pn.getAttribute('data-tab-content') === id || pn.getAttribute('data-tab-panel') === id);
+      if (el && el !== root && !el.contains(t) && !t.contains(el)) return el;
+    }
+    return null;
+  };
+  const label = (t, panel, i) => ((t && t.textContent) || '').replace(/\s+/g, ' ').trim() || ((panel.querySelector('h1,h2,h3') || {}).textContent || '').trim().slice(0, 40) || 'بخش ' + (i + 1);
+  let pairs = [], seen = new Set();
+  trigs.forEach(t => { const pn = resolve(t); if (pn && !seen.has(pn)) { seen.add(pn); pairs.push({ t, panel:pn }); } });
+  if (pairs.length < 2) {
+    if (leaf.length >= 2 && trigs.length === leaf.length) pairs = leaf.map((pn, i) => ({ t:trigs[i], panel:pn }));
+    else if (leaf.length >= 2) pairs = leaf.map(pn => ({ t:null, panel:pn }));
+    else return null;
+  }
+  const panels = pairs.map(x => x.panel);
+  if (panels.some(a => panels.some(b => a !== b && a.contains(b)))) return null;
+  const out = pairs.map((x, i) => {
+    const c = x.panel.cloneNode(true); c.removeAttribute('hidden'); if (c.style && c.style.display === 'none') c.style.display = '';
+    c.classList.add('active', 'show'); return { name:label(x.t, x.panel, i), content:c.outerHTML };
+  });
+  const inPanel = el => panels.some(pn => pn.contains(el));
+  const styles = [...doc.querySelectorAll('style')].filter(e => !inPanel(e)), scripts = [...doc.querySelectorAll('script')].filter(e => !inPanel(e));
+  const links = [...doc.querySelectorAll('link[rel="stylesheet"]')];
+  const hide = el => el.setAttribute('style', (el.getAttribute('style') || '') + ';display:none!important');
+  const tr = pairs.map(x => x.t).filter(Boolean), par = tr[0] && tr[0].parentElement;
+  if (par && par !== root && tr.every(t => par.contains(t))) hide(par); else tr.forEach(hide);
+  const sParts = styles.map(e => e.outerHTML), cParts = scripts.map(e => e.outerHTML), lParts = links.map(e => e.outerHTML);
+  panels.forEach(pn => pn.remove()); styles.forEach(e => e.remove()); scripts.forEach(e => e.remove());
+  const header = [...lParts, ...sParts, root.innerHTML.trim(), ...cParts].join('\n').trim();
+  return { header, tabs:out };
 }
+function parseLesson(html) {
+  if (!html || !html.trim()) return { header:'', tabs:[{ name:'محتوا', content:'<div class="empty">محتوایی ثبت نشده است.</div>' }] };
+  const re = /<!--\s*TAB:\s*(.*?)\s*-->([\s\S]*?)(?=<!--\s*TAB:|$)/g, first = html.search(/<!--\s*TAB:/); let m, tabs = [], header = '';
+  if (first >= 0) { header = html.slice(0, first).trim(); while ((m = re.exec(html)) !== null) tabs.push({ name:m[1].trim(), content:m[2].trim() }); }
+  else tabs = [{ name:'محتوا', content:html }];
+  if (tabs.length === 1) { const sp = autoSplit(header ? header + '\n' + tabs[0].content : tabs[0].content); if (sp) return sp; }
+  return { header, tabs };
+}
+const parseTabs = html => parseLesson(html).tabs;
+function scopeCss(css, scope) {
+  let sheet; try { sheet = new CSSStyleSheet(); sheet.replaceSync(css); } catch (e) { return css; }
+  const sel = t => t.split(',').map(x => { x = x.trim(); return /^(html|body|:root)\b/.test(x) ? x.replace(/^(html|body|:root)/, scope) : scope + ' ' + x; }).join(',');
+  const walk = rules => [...rules].map(r => r.type === 1 ? sel(r.selectorText) + '{' + r.style.cssText + '}' : r.type === 4 ? '@media ' + r.media.mediaText + '{' + walk(r.cssRules) + '}' : r.type === 12 ? '@supports ' + r.conditionText + '{' + walk(r.cssRules) + '}' : r.cssText).join('\n');
+  return walk(sheet.cssRules);
+}
+function scopeStyles(root) { root.querySelectorAll('style').forEach(st => { if (st.dataset.scoped) return; st.textContent = scopeCss(st.textContent, '#' + root.id); st.dataset.scoped = '1'; }); }
 const legacyClean = h => String(h).replace(/color:\s*#(?:34d399|cbd5e1|e2e8f0|e0e0e0|94a3b8|10b981)\s*;?/gi, '');
 
 function renderLesson(v) {
   const g = G(), b = B(), l = L();
   if (isLocked(b, l)) { v.innerHTML = `<div class="panel lp" style="text-align:center"><strong>${esc(l.title)}</strong></div>` + lockPanel(b); return; }
-  parsedTabs = parseTabs(l.fullHtml);
+  const pl = parseLesson(l.fullHtml); parsedTabs = pl.tabs;
   if (S.t >= parsedTabs.length) S.t = 0;
   const k = lk(b, l);
   prog.tabs[k] = prog.tabs[k] || {}; prog.tabs[k][S.t] = 1;
@@ -653,10 +784,11 @@ function renderLesson(v) {
     ${isAdmin ? `<button class="btn block ghost" style="margin-bottom:12px" data-act="edit-content">✏️ ویرایش محتوای درس</button>` : ''}
     ${lessonUpdated(b, l) ? `<div class="panel lp" style="border-color:var(--accent)"><div class="prow" style="padding:0"><span>🔄 این درس بروزرسانی شده است</span><button class="btn sm" data-act="update-book" data-id="${esc(b.id)}">${dlBusy[b.id] ? '⏳' : 'دریافت'}</button></div></div>` : ''}
     <div class="panel lp" style="padding:12px 14px"><div class="prow" style="padding:0 0 8px"><strong style="font-size:.88rem">پیشرفت این درس</strong><span id="lp-txt" style="color:var(--muted);font-size:.82rem">${fa(p.done)} از ${fa(p.total)} بخش · ${fa(p.p)}٪</span></div><div class="bar"><i id="lp-bar" style="width:${p.p}%"></i></div></div>
-    <div class="chips">${parsedTabs.map((t, i) => `<button class="chip ${i === S.t ? 'on' : ''}" data-act="tab" data-id="${i}">${esc(t.name)}</button>`).join('')}</div>
-    <div class="lesson-box content" id="lesson-content">${legacyClean(parsedTabs[S.t].content)}</div>
+    <div class="chips" id="lesson-chips">${parsedTabs.map((t, i) => `<button class="chip ${i === S.t ? 'on' : ''}" data-act="tab" data-id="${i}">${esc(t.name)}</button>`).join('')}</div>
+    <div class="lesson-box content" id="lesson-content">${pl.header ? `<div class="lh">${legacyClean(pl.header)}</div>` : ''}${parsedTabs.map((t, i) => `<div class="tabview" data-i="${i}" ${i === S.t ? '' : 'hidden'}>${legacyClean(t.content)}</div>`).join('')}</div>
     <div class="stat-row"><button class="btn ${stt === 'read' ? '' : 'ghost'}" data-act="status" data-id="read">✅ خواندم</button><button class="btn ${stt === 'review' ? '' : 'ghost'}" data-act="status" data-id="review">🔁 نیاز به مرور</button></div>
     ${next ? `<div style="margin-top:10px"><button class="btn ghost block" data-act="next-lesson" data-id="${esc(next.id)}">درس بعد: ${esc(next.title)}</button></div>` : ''}`;
+  scopeStyles($('lesson-content'));
   hydrate($('lesson-content'), true);
 }
 
@@ -686,10 +818,11 @@ function hydrate(root, live) {
     el.className = 'file-card'; el.removeAttribute('contenteditable');
     el.innerHTML = `<span style="font-size:1.5rem">📄</span><div class="fn">${esc(el.dataset.name || 'فایل PDF')}</div><button class="btn sm" data-act="pdf-open">باز کردن</button><button class="btn sm ghost" data-act="pdf-dl">دانلود</button>${navigator.pdfViewerEnabled ? '<button class="btn sm ghost" data-act="pdf-view">نمایش</button>' : ''}<div class="pdf-slot" style="flex-basis:100%"></div>`;
   });
-  root.querySelectorAll('[data-quiz]').forEach((el, qi) => {
+  root.querySelectorAll('[data-quiz]').forEach(el => {
+    const tv = el.closest('.tabview'), ti = tv ? +tv.dataset.i : S.t, qi = tv ? [...tv.querySelectorAll('[data-quiz]')].indexOf(el) : 0;
     const d = dec(el.dataset.quiz); if (!d || !d.q) return;
     el.className = 'quiz'; el.removeAttribute('contenteditable');
-    const key = S.t + ':' + qi, lesson = L(), book = B();
+    const key = ti + ':' + qi, lesson = L(), book = B();
     const best = lesson && prog.quiz[lk(book, lesson)] && prog.quiz[lk(book, lesson)][key];
     let answered = 0, correct = 0;
     el.innerHTML = d.q.map((q, i) => `<div class="qq" data-i="${i}"><div class="qt">${fa(i + 1)}. ${esc(q.t)}</div>${q.o.map((o, j) => `<button class="qopt" data-j="${j}">${esc(o)}</button>`).join('')}<div class="qexp" hidden></div></div>`).join('') +
@@ -781,6 +914,8 @@ function renderSettings(v) {
     <div class="seg" style="margin-bottom:12px">${[['auto','خودکار'],['light','روشن'],['dark','تیره']].map(t => `<button class="${prefs.theme === t[0] ? 'on' : ''}" data-act="theme" data-id="${t[0]}">${t[1]}</button>`).join('')}</div>
     <div class="prow"><span>اندازه متن</span><div style="display:flex;gap:8px;align-items:center"><button class="btn ghost sm" data-act="fs" data-id="-1">A−</button><span>${fa(prefs.fs)}</span><button class="btn ghost sm" data-act="fs" data-id="1">A+</button></div></div>
   </div>
+  <div class="panel"><h4>رنگ برنامه</h4><div class="swatches">${THEMES.map(c => `<button class="sw ${accentColor().toLowerCase() === c ? 'on' : ''}" style="background:${c}" data-act="accent" data-id="${c}" aria-label="${c}"></button>`).join('')}<label class="sw custom ${prefs.accent && !THEMES.includes(prefs.accent.toLowerCase()) ? 'on' : ''}" title="رنگ دلخواه">🎨<input type="color" id="accent-pick" value="${accentColor()}"></label></div>
+    <button class="btn ghost sm" data-act="accent" data-id="">بازگشت به رنگ پیش‌فرض</button></div>
   <div class="panel"><h4>برنامه</h4><div class="stack">
     <button class="btn block" id="btn-install" data-act="install" style="display:${deferredPrompt || (IS_HOSTED && /iphone|ipad|ipod/i.test(navigator.userAgent) && !navigator.standalone) ? 'block' : 'none'}">📲 نصب برنامه روی گوشی / رایانه</button>
     <button class="btn ghost block" data-act="check-update">🔄 بررسی به‌روزرسانی</button>
@@ -818,7 +953,7 @@ function setupPWA() {
 }
 
 /* ================= ویرایشگر ================= */
-let edTabs = [], edIdx = 0, edSrc = false, edFull = false, edRange = null, edBlock = null;
+let edTabs = [], edHeader = '', edIdx = 0, edSrc = false, edFull = false, edRange = null, edBlock = null;
 const ed = () => $('ed-area');
 document.addEventListener('selectionchange', () => { const s = getSelection(); if (s.rangeCount && ed().contains(s.anchorNode)) edRange = s.getRangeAt(0).cloneRange(); });
 $('ed-toolbar').addEventListener('mousedown', e => e.preventDefault());
@@ -845,16 +980,19 @@ function edSetMode(m) {
   $('b-src').textContent = m === 'tab' ? '↩ ویرایشگر بصری' : '‹/› کد HTML تب';
   $('b-full').textContent = m === 'full' ? '↩ بازگشت به ویرایشگر' : '{ } کد کامل درس';
 }
-const fullToTabs = val => val.trim() ? parseTabs(val).map(t => ({ name:t.name, html:t.content })) : [{ name:'محتوا', html:'' }];
+const fullToLesson = val => { if (!val.trim()) return { header:'', tabs:[{ name:'محتوا', html:'' }] }; const r = parseLesson(val); return { header:r.header, tabs:r.tabs.map(t => ({ name:t.name, html:t.content })) }; };
+const composeFull = () => (edHeader ? edHeader + '\n' : '') + edTabs.map(t => `<!-- TAB: ${t.name.replace(/-->/g, '')} -->\n${t.html}`).join('\n');
 function edCommit() { edTabs[edIdx].html = edSrc ? $('ed-src').value : cleanHtml(); }
 function edLoad() { edRange = null; ed().innerHTML = legacyClean(edTabs[edIdx].html || '') || '<p><br></p>'; decorate(); }
 function edRenderTabs() {
+  $('ed-hdr-note').style.display = edHeader ? 'block' : 'none';
   $('ed-tabs').innerHTML = edTabs.map((t, i) => `<button class="chip ${i === edIdx ? 'on' : ''}" data-act="ed-tab" data-id="${i}">${esc(t.name)}</button>`).join('') +
     `<button class="chip" data-act="ed-addtab">＋ تب</button><button class="chip" data-act="ed-rename">✏️ نام تب</button><button class="chip" data-act="ed-deltab">🗑 حذف تب</button>`;
 }
 function openEditor() {
   const l = L(); $('ed-title').textContent = 'ویرایش: ' + l.title;
-  edTabs = parseTabs(l.fullHtml).map(t => ({ name:t.name, html:t.content.includes('empty-state') && !l.fullHtml ? '' : t.content }));
+  const pl = parseLesson(l.fullHtml); edHeader = pl.header;
+  edTabs = pl.tabs.map(t => ({ name:t.name, html:!l.fullHtml ? '' : t.content }));
   edIdx = Math.min(S.t, edTabs.length - 1); edSrc = false;
   edFull = false; edSetMode('visual');
   document.execCommand('styleWithCSS', false, false);
@@ -1015,16 +1153,26 @@ async function iconPng(size, maskable) {
   return new Promise(res => c.toBlob(b => b.arrayBuffer().then(a => res(new Uint8Array(a))), 'image/png'));
 }
 const SW_SRC = `const CACHE = '__CACHE__';
-const CORE = ['./', './index.html', './manifest.webmanifest', './data/catalog.js', './data/conf.js', './icons/icon-192.png', './icons/icon-512.png', './icons/maskable-512.png', './icons/apple-touch-icon.png'];
+const CORE = ['./', './index.html', './manifest.webmanifest', './data/catalog.js', './data/conf.js', './data/home.js', './icons/icon-192.png', './icons/icon-512.png', './icons/maskable-512.png', './icons/apple-touch-icon.png'];
 const OPTIONAL = ['./fonts/Vazirmatn.woff2'];
+const IMG = 'edu-img';
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(CORE).then(() => Promise.all(OPTIONAL.map(a => c.add(a).catch(() => {})))))); });
 self.addEventListener('message', e => { if (e.data === 'SKIP_WAITING') self.skipWaiting(); });
-self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
+self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE && k !== IMG).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
 self.addEventListener('fetch', e => {
   const req = e.request; if (req.method !== 'GET') return;
-  const url = new URL(req.url); if (url.origin !== location.origin) return;
+  const url = new URL(req.url);
+  if (url.origin !== location.origin) {
+    if (req.destination === 'image' && /^https?:$/.test(url.protocol)) {
+      e.respondWith(caches.open(IMG).then(c => c.match(req).then(hit => {
+        const net = fetch(req).then(res => { if (res && (res.ok || res.type === 'opaque')) { c.put(req, res.clone()); c.keys().then(ks => { if (ks.length > 40) c.delete(ks[0]); }); } return res; }).catch(() => hit);
+        if (hit) { e.waitUntil(net); return hit; } return net;
+      })));
+    }
+    return;
+  }
   if (url.pathname.indexOf('/data/book_') >= 0) return;
-  const nf = req.mode === 'navigate' || url.pathname.endsWith('/data/catalog.js') || url.pathname.endsWith('/data/conf.js');
+  const nf = req.mode === 'navigate' || url.pathname.endsWith('/data/catalog.js') || url.pathname.endsWith('/data/conf.js') || url.pathname.endsWith('/data/home.js');
   if (nf) { e.respondWith(fetch(req).then(res => { if (res.ok) { const cp = res.clone(); caches.open(CACHE).then(c => c.put(req, cp)); } return res; }).catch(() => caches.match(req, { ignoreSearch: true }).then(r => r || caches.match('./index.html')))); return; }
   e.respondWith(caches.match(req, { ignoreSearch: true }).then(r => r || fetch(req).then(res => { if (res.ok) { const cp = res.clone(); caches.open(CACHE).then(c => c.put(req, cp)); } return res; })));
 });`;
@@ -1037,7 +1185,7 @@ async function exportStudent() {
     toast('در حال ساخت بسته (رمزنگاری درس‌های پولی)...');
     const te = new TextEncoder(), files = [], cat = { stamp:Date.now(), grades:[] }; let n = 0, dirty = false;
     for (const g of appData) {
-      const cg = { id:g.id, title:g.title, icon:g.icon, img:g.img, active:g.active !== false, books:[] };
+      const cg = { id:g.id, title:g.title, icon:g.icon, img:g.img, cat:catOf(g), active:g.active !== false, books:[] };
       for (const b of g.books) {
         n++; const a = bookAcc(b); let raw = null;
         if (a.paid) { if (!b.key) { b.key = b64(crypto.getRandomValues(new Uint8Array(32))); dirty = true; } raw = ub64(b.key); }
@@ -1052,7 +1200,7 @@ async function exportStudent() {
         const body = te.encode('window.__PACK__=window.__PACK__||{};window.__PACK__[' + JSON.stringify(b.id) + ']=' + pk + ';');
         files.push({ name:'data/' + file, data:body });
         const codes = a.paid ? await Promise.all((a.codes || []).map(c => wrapKey(c, raw))) : [];
-        cg.books.push({ id:b.id, title:b.title, icon:b.icon, img:b.img, rev, file, size:body.length, lessons:lessons.map(l => ({ id:l.id, r:l.r })),
+        cg.books.push({ id:b.id, title:b.title, icon:b.icon, img:b.img, group:b.group, rev, file, size:body.length, lessons:lessons.map(l => ({ id:l.id, r:l.r })),
           acc:a.paid ? { paid:true, free:a.free, price:a.price, pay:/^https?:\/\//i.test(a.pay) ? a.pay : '', codes } : { paid:false } });
       }
       cat.grades.push(cg);
@@ -1061,7 +1209,14 @@ async function exportStudent() {
     const pub = { appName:conf.appName || SETTINGS.APP_NAME, shortName:conf.shortName || SETTINGS.SHORT_NAME, color:conf.color, goftino:conf.goftino, supportUrl:conf.supportUrl, version:conf.version };
     files.push({ name:'data/catalog.js', data:te.encode('window.__CATALOG__=' + jsSafe(JSON.stringify(cat)) + ';') });
     files.push({ name:'data/conf.js', data:te.encode('window.__CONF__=' + jsSafe(JSON.stringify(pub)) + ';') });
-    const html = PRISTINE.replace('<!--INJECT-->', () => '<script>window.__STUDENT__=true;<\/script><script src="data/conf.js"><\/script><script src="data/catalog.js"><\/script>');
+    const hb = {};
+    for (const [k, v] of Object.entries(home.banners)) {
+      if (!v || !v.img) continue;
+      if (v.img.startsWith('data:')) { const name = 'banner_' + k + '_' + hash(v.img) + '.jpg'; files.push({ name:'data/' + name, data:ub64(v.img.split(',')[1]) }); hb[k] = { img:'data/' + name, url:v.url || '' }; }
+      else hb[k] = { img:v.img, url:v.url || '' };
+    }
+    files.push({ name:'data/home.js', data:te.encode('window.__HOME__=' + jsSafe(JSON.stringify({ cats:home.cats, banners:hb })) + ';') });
+    const html = PRISTINE.replace('<!--INJECT-->', () => '<script>window.__STUDENT__=true;<\/script><script src="data/conf.js"><\/script><script src="data/home.js"><\/script><script src="data/catalog.js"><\/script>');
     const col = /^#[0-9a-f]{6}$/i.test(conf.color) ? conf.color : '#3a8a5c';
     const manifest = { name:pub.appName, short_name:pub.shortName, id:'./', start_url:'./', scope:'./', display:'standalone', dir:'rtl', lang:'fa', background_color:'#f6f7f6', theme_color:col,
       icons:[{ src:'icons/icon-192.png', sizes:'192x192', type:'image/png', purpose:'any' },{ src:'icons/icon-512.png', sizes:'512x512', type:'image/png', purpose:'any' },{ src:'icons/maskable-512.png', sizes:'512x512', type:'image/png', purpose:'maskable' }] };
@@ -1091,7 +1246,12 @@ const ACT = {
   'next-lesson': id => nav({ l:id, t:0 }),
   continue: () => { const p = prog.last; nav({ tab:'home', g:p.g, b:p.b, l:p.l, t:0 }); },
   'open-result': (id, el) => { const d = el.dataset; if (d.l) nav({ tab:'home', g:d.g, b:d.b, l:d.l, t:0 }); else openBook(d.g, d.b); },
-  tab: id => { S.t = +id; render(); },
+  tab: id => {
+    S.t = +id; const c = $('lesson-content'); if (!c) return render();
+    c.querySelectorAll(':scope > .tabview').forEach(tv => { tv.hidden = +tv.dataset.i !== S.t; });
+    document.querySelectorAll('#lesson-chips .chip').forEach((ch, i) => ch.classList.toggle('on', i === S.t));
+    const k = lk(B(), L()); prog.tabs[k] = prog.tabs[k] || {}; prog.tabs[k][S.t] = 1; saveProg(); refreshLessonProg();
+  },
   'toggle-book': () => { toggleMineBook(G(), B()); render(); },
   status: id => { const st = statusOf(B(), L()); setStatus(B(), L(), id); render(); if (st !== id) toast(id === 'read' ? 'ثبت شد: خواندم ✅' : 'برای مرور علامت خورد 🔁'); },
   'update-book': async id => { const b = B() || G().books.find(x => x.id === id); if (b) await downloadBook(b); },
@@ -1117,7 +1277,7 @@ const ACT = {
     isAdmin = !isAdmin; render();
   },
   'export-student': exportStudent,
-  'export-json': () => download(JSON.stringify(appData, null, 2), 'data.json', 'application/json'),
+  'export-json': () => download(JSON.stringify({ format:2, grades:appData, home, conf }, null, 2), 'data.json', 'application/json'),
   'import-json': () => $('file-import').click(),
   'export-csv': () => {
     let c = 'پایه,کتاب,درس,محتوا (HTML)\n';
@@ -1128,12 +1288,12 @@ const ACT = {
 
   'it-pick': () => $('it-file').click(),
   'it-clear': () => { itImg = null; itPrev(); },
-  'add-grade': () => itemDlg('افزودن پایه', { icon:'🎓' }, true, (t, i, img) => { appData.push({ id:'g_' + Date.now(), title:t, icon:i || '🎓', img:img || undefined, active:true, books:[] }); saveData(); render(); }),
-  'edit-grade': id => { const g = appData.find(x => x.id === id); itemDlg('ویرایش پایه', g, true, (t, i, img) => { g.title = t; g.icon = i || g.icon; if (img) g.img = img; else delete g.img; saveData(); render(); }); },
+  'add-grade': () => { itemDlg('افزودن پایه', { icon:'🎓' }, true, (t, i, img) => { appData.push({ id:'g_' + Date.now(), title:t, icon:i || '🎓', img:img || undefined, cat:$('it-cat').value, active:true, books:[] }); saveData(); render(); }); $('dlg-body').insertAdjacentHTML('beforeend', catSelect({})); },
+  'edit-grade': id => { const g = appData.find(x => x.id === id); itemDlg('ویرایش پایه', g, true, (t, i, img) => { g.title = t; g.icon = i || g.icon; g.cat = $('it-cat').value; if (img) g.img = img; else delete g.img; saveData(); render(); }); $('dlg-body').insertAdjacentHTML('beforeend', catSelect(g)); },
   'toggle-grade': id => { const g = appData.find(x => x.id === id); g.active = g.active === false; saveData(); render(); },
   'del-grade': id => { if (confirm('حذف پایه و همه محتوای آن؟')) { appData = appData.filter(x => x.id !== id); saveData(); render(); } },
-  'add-book': () => itemDlg('افزودن کتاب', { icon:'📘' }, true, (t, i, img) => { G().books.push({ id:'b_' + Date.now(), title:t, icon:i || '📘', img:img || undefined, lessons:[] }); saveData(); render(); }),
-  'edit-book': id => { const b = G().books.find(x => x.id === id); itemDlg('ویرایش کتاب', b, true, (t, i, img) => { b.title = t; b.icon = i || b.icon; if (img) b.img = img; else delete b.img; saveData(); render(); }); },
+  'add-book': () => { itemDlg('افزودن کتاب', { icon:'📘' }, true, (t, i, img) => { G().books.push({ id:'b_' + Date.now(), title:t, icon:i || '📘', img:img || undefined, group:$('it-grp').value.trim() || undefined, lessons:[] }); saveData(); render(); }); $('dlg-body').insertAdjacentHTML('beforeend', grpField({})); },
+  'edit-book': id => { const b = G().books.find(x => x.id === id); itemDlg('ویرایش کتاب', b, true, (t, i, img) => { b.title = t; b.icon = i || b.icon; b.group = $('it-grp').value.trim() || undefined; if (img) b.img = img; else delete b.img; saveData(); render(); }); $('dlg-body').insertAdjacentHTML('beforeend', grpField(b)); },
   'del-book': id => { if (confirm('حذف کتاب؟')) { G().books = G().books.filter(x => x.id !== id); saveData(); render(); } },
   'add-lesson': () => itemDlg('افزودن درس', {}, false, (t, i, img) => { B().lessons.push({ id:'l_' + Date.now(), title:t, img:img || undefined, fullHtml:'' }); saveData(); render(); }),
   'edit-lesson': id => { const l = B().lessons.find(x => x.id === id); itemDlg('ویرایش درس', l, false, (t, i, img) => { l.title = t; if (img) l.img = img; else delete l.img; saveData(); render(); }); },
@@ -1156,6 +1316,18 @@ const ACT = {
   'support-chat': () => { if (window.Goftino && Goftino.open) Goftino.open(); else if (conf.supportUrl) window.open(conf.supportUrl, '_blank'); else toast('گفتگو هنوز بارگذاری نشده است'); },
   'pdf-embed': (id, el) => { const slot = el.closest('.file-card').querySelector('.pdf-slot'), d = dec(el.closest('[data-media]').dataset.media); slot.innerHTML = slot.firstChild ? '' : `<iframe class="pdf-frame" src="${esc(d.u)}"></iframe>`; },
   'pdf-view': (id, el) => { const c = el.closest('[data-pdf]'), slot = c.querySelector('.pdf-slot'); slot.innerHTML = slot.firstChild ? '' : `<iframe class="pdf-frame" src="${URL.createObjectURL(pdfBlob(c.dataset.pdf))}"></iframe>`; },
+  'edit-banner': id => openBannerDlg(id),
+  'bn-pick': () => $('bn-file').click(),
+  'bn-clear': () => { bnImg = null; $('bn-img-url').value = ''; bnPrev(); },
+  'cats-edit': openCatsDlg,
+  'cat-add': () => { const r = readCatRows(); r.push({ id:'', title:'' }); renderCatRows(r); },
+  'cat-del': (id, el) => el.closest('.optrow').remove(),
+  accent: id => { prefs.accent = id || null; ls.set('edu_prefs_v1', prefs); applyConf(); applyPrefs(); render(); },
+  'bulk-lessons': () => openDlg('افزودن گروهی درس‌ها', '<textarea class="field" id="bl-t" rows="10" placeholder="هر خط یک عنوان درس:&#10;درس اول: ...&#10;درس دوم: ..."></textarea><p style="font-size:.78rem;color:var(--muted)">درس‌های تکراری (هم‌نام) اضافه نمی‌شوند. محتوای هر درس را بعدا وارد کنید.</p>', () => {
+    const b = B(), titles = $('bl-t').value.split('\n').map(x => x.trim()).filter(Boolean).filter(t => !b.lessons.some(l => l.title === t));
+    if (!titles.length) { alert('عنوان جدیدی وارد نشده است.'); return false; }
+    titles.forEach((t, i) => b.lessons.push({ id:'l_' + Date.now() + '_' + i, title:t, fullHtml:'' })); saveData(); render(); toast(titles.length + ' درس اضافه شد');
+  }),
   cmd: id => cmd(id),
   'ed-close': () => { if (confirm('تغییرات ذخیره‌نشده از بین می‌رود. خارج می‌شوید؟')) $('editor').classList.remove('show'); },
   'ed-tab': id => { edCommit(); edIdx = +id; if (edSrc) $('ed-src').value = edTabs[edIdx].html; else edLoad(); edRenderTabs(); },
@@ -1168,12 +1340,12 @@ const ACT = {
     else { edTabs[edIdx].html = $('ed-src').value; edSrc = false; edSetMode('visual'); edLoad(); }
   },
   'ed-full': () => {
-    if (!edFull) { edCommit(); $('ed-src').value = edTabs.map(t => `<!-- TAB: ${t.name} -->\n${t.html}`).join('\n'); edSrc = false; edFull = true; edSetMode('full'); }
-    else { edTabs = fullToTabs($('ed-src').value); edIdx = 0; edFull = false; edSetMode('visual'); edLoad(); edRenderTabs(); }
+    if (!edFull) { edCommit(); $('ed-src').value = composeFull(); edSrc = false; edFull = true; edSetMode('full'); }
+    else { const r = fullToLesson($('ed-src').value); edHeader = r.header; edTabs = r.tabs; edIdx = 0; edFull = false; edSetMode('visual'); edLoad(); edRenderTabs(); }
   },
   'ed-save': async () => {
-    if (edFull) edTabs = fullToTabs($('ed-src').value); else edCommit();
-    L().fullHtml = edTabs.map(t => `<!-- TAB: ${t.name.replace(/-->/g, '')} -->\n${t.html}`).join('\n');
+    if (edFull) { const r = fullToLesson($('ed-src').value); edHeader = r.header; edTabs = r.tabs; } else edCommit();
+    L().fullHtml = composeFull();
     await saveData(); $('editor').classList.remove('show'); S.t = Math.min(edIdx, edTabs.length - 1); render(); toast('ذخیره شد');
   },
   'dlg-close': closeDlg,
@@ -1181,13 +1353,28 @@ const ACT = {
   'q-add': () => { const q = qRead(); q.push({ t:'', o:['', '', '', ''], a:0, e:'' }); qCards(q); },
   'q-del': id => { const q = qRead(); q.splice(+id, 1); qCards(q.length ? q : [{ t:'', o:['', '', '', ''], a:0, e:'' }]); }
 };
-const ADMIN_ACTS = new Set(['export-student','export-json','import-json','export-csv','reset','add-grade','edit-grade','toggle-grade','del-grade','add-book','edit-book','del-book','add-lesson','edit-lesson','del-lesson','edit-content','admin-toggle','ed-save','conf-edit','cf-pick','cf-clear','book-access','gen-codes']);
+document.addEventListener('input', e => { if (e.target.id === 'accent-pick') { prefs.accent = e.target.value; ls.set('edu_prefs_v1', prefs); applyConf(); applyPrefs(); } });
+const ADMIN_ACTS = new Set(['export-student','export-json','import-json','export-csv','reset','add-grade','edit-grade','toggle-grade','del-grade','add-book','edit-book','del-book','add-lesson','edit-lesson','del-lesson','edit-content','admin-toggle','ed-save','conf-edit','cf-pick','cf-clear','book-access','gen-codes','edit-banner','bn-pick','bn-clear','cats-edit','cat-add','cat-del','bulk-lessons']);
 document.addEventListener('click', e => { const el = e.target.closest('[data-act]'); if (!el) return; const a = el.dataset.act; if (ADMIN_ACTS.has(a) && !ADMIN_ALLOWED) return; const f = ACT[a]; if (f) f(el.dataset.id, el, e); });
 
+function mergeGrade(ex, g) {
+  if (g.replaceEmptyBooks) ex.books = ex.books.filter(b => b.lessons && b.lessons.length > 0);
+  g.books.forEach(b => {
+    const eb = ex.books.find(x => x.id === b.id || x.title === b.title);
+    if (!eb) { ex.books.push(b); return; }
+    if (!eb.group && b.group) eb.group = b.group;
+    (b.lessons || []).forEach(l => { if (!eb.lessons.some(x => x.id === l.id || x.title === l.title)) eb.lessons.push(l); });
+  });
+}
 $('file-import').addEventListener('change', e => {
   const f = e.target.files[0]; e.target.value = ''; if (!f) return;
   const r = new FileReader();
-  r.onload = async () => { try { const d = JSON.parse(r.result); if (!validData(d)) return alert('ساختار فایل معتبر نیست.'); appData = d; await saveData(); nav({ tab:'home', g:null, b:null, l:null }, false); toast('اطلاعات وارد شد'); } catch (err) { alert('فایل JSON خراب است.'); } };
+  r.onload = async () => { try { const raw = JSON.parse(r.result), d = Array.isArray(raw) ? raw : raw && raw.grades; if (!validData(d)) return alert('ساختار فایل معتبر نیست.');
+      if (appData.length && !confirm('تایید = جایگزینی کامل داده‌های فعلی\nانصراف = ادغام امن (پایه‌های موجود حفظ می‌شوند و فقط پایه‌های جدید اضافه می‌شوند)')) {
+        const used = new Set(), merged = d.map(g => { const ex = appData.find(x => x.id === g.id || x.title === g.title); if (ex) { used.add(ex); mergeGrade(ex, g); return ex; } return g; });
+        appData = merged.concat(appData.filter(x => !used.has(x)));
+      } else { appData = d; if (!Array.isArray(raw)) { if (raw.home) { home = Object.assign(home, raw.home); saveHome(); } if (raw.conf) { conf = Object.assign(conf, raw.conf); store.set('conf', conf).catch(() => {}); applyConf(); } } }
+      await saveData(); nav({ tab:'home', g:null, b:null, l:null }, false); toast('اطلاعات وارد شد'); } catch (err) { alert('فایل JSON خراب است.'); } };
   r.readAsText(f);
 });
 
@@ -1196,6 +1383,7 @@ $('file-import').addEventListener('change', e => {
   applyPrefs();
   await store.open();
   try { const c = IS_STUDENT ? window.__CONF__ : await store.get('conf'); if (c) Object.assign(conf, c); } catch (e) {}
+  try { const h = IS_STUDENT ? window.__HOME__ : await store.get('home'); if (h) home = Object.assign(home, h); } catch (e) {}
   applyConf(); applyPrefs();
   try { await loadData(); } catch (e) { window.onerror(e.message, '', 0); }
   history.replaceState(JSON.parse(JSON.stringify(S)), '');
